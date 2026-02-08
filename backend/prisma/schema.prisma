@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  name         String
+  avatarUrl    String?
+  timezone     String   @default("America/Argentina/Buenos_Aires")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  eventTypes     EventType[]
+  availabilities Availability[]
+  bookingsAsHost Booking[]     @relation("HostBookings")
+  integrations   Integration[]
+  workflows      Workflow[]
+
+  @@map("users")
+}
+
+model EventType {
+  id          String   @id @default(uuid())
+  userId      String
+  title       String
+  slug        String
+  description String?
+  duration    Int      // in minutes
+  color       String   @default("#3b82f6")
+  location    String?  // zoom, meet, phone, in-person, custom
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@unique([userId, slug])
+  @@map("event_types")
+}
+
+model Availability {
+  id        String   @id @default(uuid())
+  userId    String
+  dayOfWeek Int      // 0 = Sunday, 6 = Saturday
+  startTime String   // HH:mm format
+  endTime   String   // HH:mm format
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("availabilities")
+}
+
+model DateOverride {
+  id        String   @id @default(uuid())
+  userId    String
+  date      DateTime @db.Date
+  isBlocked Boolean  @default(false)
+  startTime String?  // HH:mm format, null if blocked
+  endTime   String?  // HH:mm format, null if blocked
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, date])
+  @@map("date_overrides")
+}
+
+model Booking {
+  id                String        @id @default(uuid())
+  eventTypeId       String
+  hostId            String
+  guestName         String
+  guestEmail        String
+  guestTimezone     String
+  startTime         DateTime
+  endTime           DateTime
+  notes             String?
+  status            BookingStatus @default(CONFIRMED)
+  cancellationToken String        @unique @default(uuid())
+  cancelledAt       DateTime?
+  cancelReason      String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  eventType     EventType      @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+  host          User           @relation("HostBookings", fields: [hostId], references: [id], onDelete: Cascade)
+  calendarEvent CalendarEvent?
+
+  @@map("bookings")
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model SchedulingConfig {
+  id               String @id @default(uuid())
+  userId           String @unique
+  bufferBefore     Int    @default(0)  // minutes before meeting
+  bufferAfter      Int    @default(0)  // minutes after meeting
+  minNotice        Int    @default(60) // minimum notice in minutes
+  maxDaysInAdvance Int    @default(60) // how far ahead can book
+
+  @@map("scheduling_configs")
+}
+
+// ==================== INTEGRACIONES ====================
+
+model Integration {
+  id           String              @id @default(uuid())
+  userId       String
+  provider     IntegrationProvider
+  accessToken  String              @db.Text
+  refreshToken String?             @db.Text
+  expiresAt    DateTime?
+  accountEmail String?
+  isActive     Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@map("integrations")
+}
+
+enum IntegrationProvider {
+  GOOGLE_CALENDAR
+  ZOOM
+}
+
+model CalendarEvent {
+  id              String   @id @default(uuid())
+  bookingId       String   @unique
+  provider        String
+  externalEventId String
+  meetingUrl      String?
+  createdAt       DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("calendar_events")
+}
+
+// ==================== WORKFLOWS ====================
+
+model Workflow {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  triggers WorkflowTrigger[]
+  actions  WorkflowAction[]
+
+  @@map("workflows")
+}
+
+model WorkflowTrigger {
+  id         String      @id @default(uuid())
+  workflowId String
+  type       TriggerType
+  config     Json?
+
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@map("workflow_triggers")
+}
+
+enum TriggerType {
+  BOOKING_CREATED
+  BOOKING_CANCELLED
+  BOOKING_REMINDER_1H
+  BOOKING_REMINDER_24H
+}
+
+model WorkflowAction {
+  id         String     @id @default(uuid())
+  workflowId String
+  type       ActionType
+  config     Json
+  order      Int        @default(0)
+
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@map("workflow_actions")
+}
+
+enum ActionType {
+  SEND_EMAIL
+  SEND_WEBHOOK
+}
+
+model Job {
+  id          String    @id @default(uuid())
+  type        String
+  data        Json
+  status      JobStatus @default(PENDING)
+  attempts    Int       @default(0)
+  error       String?   @db.Text
+  scheduledAt DateTime
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([status, scheduledAt])
+  @@map("jobs")
+}
