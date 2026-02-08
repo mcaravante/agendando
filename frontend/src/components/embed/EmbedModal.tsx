@@ -19,7 +19,7 @@ export function EmbedModal({ isOpen, onClose, eventUrl, eventTitle, userName }: 
   const [copied, setCopied] = useState(false);
 
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3002';
-  const widgetUrl = `${apiUrl}/widget/agendame-widget.js`;
+  const widgetUrl = `${apiUrl}/widget/agendando-widget.js`;
 
   const embedOptions: { type: EmbedType; title: string; description: string; icon: React.ReactNode }[] = [
     {
@@ -64,22 +64,22 @@ export function EmbedModal({ isOpen, onClose, eventUrl, eventTitle, userName }: 
   const getEmbedCode = (): string => {
     switch (selectedType) {
       case 'inline':
-        return `<!-- Agendame Inline Embed -->
-<div data-agendame-inline="${eventUrl}"></div>
+        return `<!-- Agendando Inline Embed -->
+<div data-agendando-inline="${eventUrl}"></div>
 <script src="${widgetUrl}" async></script>`;
 
       case 'popup-widget':
-        return `<!-- Agendame Popup Widget -->
+        return `<!-- Agendando Popup Widget -->
 <div
-  data-agendame-badge="${eventUrl}"
-  data-agendame-text="Agendar ${eventTitle}"
-  data-agendame-color="#3b82f6"
+  data-agendando-badge="${eventUrl}"
+  data-agendando-text="Agendar ${eventTitle}"
+  data-agendando-color="#3b82f6"
 ></div>
 <script src="${widgetUrl}" async></script>`;
 
       case 'popup-text':
-        return `<!-- Agendame Popup Link -->
-<a href="#" data-agendame-popup="${eventUrl}">
+        return `<!-- Agendando Popup Link -->
+<a href="#" data-agendando-popup="${eventUrl}">
   Agendar una reunion
 </a>
 <script src="${widgetUrl}" async></script>`;
@@ -113,7 +113,7 @@ export function EmbedModal({ isOpen, onClose, eventUrl, eventTitle, userName }: 
           <p className="text-sm text-gray-500">{userName}</p>
 
           <div>
-            <p className="text-gray-700 mb-4">Como quieres agregar Agendame a tu sitio?</p>
+            <p className="text-gray-700 mb-4">Como quieres agregar Agendando a tu sitio?</p>
 
             <div className="grid grid-cols-3 gap-4">
               {embedOptions.map((option) => (
@@ -189,16 +189,16 @@ export function EmbedModal({ isOpen, onClose, eventUrl, eventTitle, userName }: 
             </p>
             <pre className="bg-blue-100 text-blue-900 p-3 rounded text-xs overflow-x-auto">
 {`// Abrir popup
-Agendame.popup('${eventUrl}');
+Agendando.popup('${eventUrl}');
 
 // Cerrar popup
-Agendame.close();
+Agendando.close();
 
 // Embed inline en un contenedor
-Agendame.inline('#mi-contenedor', '${eventUrl}');
+Agendando.inline('#mi-contenedor', '${eventUrl}');
 
 // Escuchar cuando se completa una reserva
-document.addEventListener('agendame:booked', (e) => {
+document.addEventListener('agendando:booked', (e) => {
   console.log('Reserva completada:', e.detail);
 });`}
             </pre>

@@ -406,7 +406,7 @@ async function processSendEmailJob(data: { to: string; subject: string; body: st
   });
 
   await transporter.sendMail({
-    from: `"Agendame" <${process.env.SMTP_USER}>`,
+    from: `"Agendando" <${process.env.SMTP_USER}>`,
     to: data.to,
     subject: data.subject,
     html: data.body,

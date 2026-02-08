@@ -1,4 +1,4 @@
-# Agendame
+# Agendando
 
 Aplicación web para programación de reuniones (estilo Calendly).
 
@@ -20,7 +20,7 @@ Aplicación web para programación de reuniones (estilo Calendly).
 
 ```bash
 # Crear la base de datos PostgreSQL
-createdb agendame
+createdb agendando
 ```
 
 ### 2. Backend
@@ -62,7 +62,7 @@ El frontend estará disponible en `http://localhost:5173`
 ### Backend (.env)
 
 ```env
-DATABASE_URL=postgresql://localhost:5432/agendame
+DATABASE_URL=postgresql://localhost:5432/agendando
 JWT_SECRET=tu-secreto-seguro
 JWT_EXPIRES_IN=7d
 SMTP_HOST=smtp.gmail.com
@@ -95,7 +95,7 @@ VITE_API_URL=/api
 ## Estructura del Proyecto
 
 ```
-/agendame
+/agendando
 ├── /backend
 │   ├── /prisma         # Schema de base de datos
 │   └── /src

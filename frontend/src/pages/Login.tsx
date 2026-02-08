@@ -19,7 +19,7 @@ export function Login() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-primary-600 dark:text-primary-400 mb-2">Agendame</h1>
+          <h1 className="text-3xl font-bold text-primary-600 dark:text-primary-400 mb-2">Agendando</h1>
           <p className="text-gray-600 dark:text-gray-400">{t('auth.loginTitle')}</p>
         </div>
         <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">

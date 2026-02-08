@@ -14,7 +14,7 @@ interface BookingDetails {
 }
 
 export function generateICS(booking: BookingDetails): ICalCalendar {
-  const calendar = ical({ name: 'Agendame' });
+  const calendar = ical({ name: 'Agendando' });
 
   calendar.createEvent({
     id: booking.id,

@@ -11,7 +11,7 @@ export function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white dark:from-gray-900 dark:to-gray-800">
       <header className="container mx-auto px-4 py-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-primary-600 dark:text-primary-400">Agendame</h1>
+        <h1 className="text-2xl font-bold text-primary-600 dark:text-primary-400">Agendando</h1>
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
             <Link to="/dashboard">

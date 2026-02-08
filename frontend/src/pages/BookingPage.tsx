@@ -129,7 +129,7 @@ export function BookingPage() {
       // Notify parent window if embedded
       if (isEmbed && window.parent !== window) {
         window.parent.postMessage({
-          type: 'agendame-booked',
+          type: 'agendando-booked',
           booking: {
             id: response.data.id,
             eventTitle: data?.eventType.title,

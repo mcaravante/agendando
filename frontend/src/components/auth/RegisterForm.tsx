@@ -93,7 +93,7 @@ export function RegisterForm() {
         {...register('username')}
       />
       <p className="text-xs text-gray-500 dark:text-gray-400 -mt-2">
-        {language === 'es' ? 'Este sera tu URL:' : 'This will be your URL:'} agendame.com/<span className="font-medium">{language === 'es' ? 'tu-usuario' : 'your-username'}</span>
+        {language === 'es' ? 'Este sera tu URL:' : 'This will be your URL:'} agendando.com/<span className="font-medium">{language === 'es' ? 'tu-usuario' : 'your-username'}</span>
       </p>
       <Input
         label={t('auth.password')}

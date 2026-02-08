@@ -101,7 +101,7 @@ export async function sendBookingConfirmation(
           <p>¿Necesitás cancelar? <a href="${cancelUrl}" class="button">Cancelar Reserva</a></p>
         </div>
         <div class="footer">
-          <p>Powered by Agendame</p>
+          <p>Powered by Agendando</p>
         </div>
       </div>
     </body>
@@ -144,7 +144,7 @@ export async function sendBookingConfirmation(
           <p>Se adjunta una invitación de calendario a este email.</p>
         </div>
         <div class="footer">
-          <p>Powered by Agendame</p>
+          <p>Powered by Agendando</p>
         </div>
       </div>
     </body>
@@ -153,7 +153,7 @@ export async function sendBookingConfirmation(
 
   // Send to guest
   await transporter.sendMail({
-    from: `"Agendame" <${process.env.SMTP_USER}>`,
+    from: `"Agendando" <${process.env.SMTP_USER}>`,
     to: booking.guestEmail,
     subject: `Confirmado: ${booking.eventType.title} con ${booking.host.name}`,
     html: guestHtml,
@@ -168,7 +168,7 @@ export async function sendBookingConfirmation(
 
   // Send to host
   await transporter.sendMail({
-    from: `"Agendame" <${process.env.SMTP_USER}>`,
+    from: `"Agendando" <${process.env.SMTP_USER}>`,
     to: booking.host.email,
     subject: `Nueva reserva: ${booking.eventType.title} con ${booking.guestName}`,
     html: hostHtml,
@@ -216,7 +216,7 @@ export async function sendBookingCancellation(booking: BookingWithDetails) {
           </div>
         </div>
         <div class="footer">
-          <p>Powered by Agendame</p>
+          <p>Powered by Agendando</p>
         </div>
       </div>
     </body>
@@ -253,7 +253,7 @@ export async function sendBookingCancellation(booking: BookingWithDetails) {
           </div>
         </div>
         <div class="footer">
-          <p>Powered by Agendame</p>
+          <p>Powered by Agendando</p>
         </div>
       </div>
     </body>
@@ -262,7 +262,7 @@ export async function sendBookingCancellation(booking: BookingWithDetails) {
 
   // Send to guest
   await transporter.sendMail({
-    from: `"Agendame" <${process.env.SMTP_USER}>`,
+    from: `"Agendando" <${process.env.SMTP_USER}>`,
     to: booking.guestEmail,
     subject: `Cancelada: ${booking.eventType.title} con ${booking.host.name}`,
     html: guestHtml,
@@ -270,7 +270,7 @@ export async function sendBookingCancellation(booking: BookingWithDetails) {
 
   // Send to host
   await transporter.sendMail({
-    from: `"Agendame" <${process.env.SMTP_USER}>`,
+    from: `"Agendando" <${process.env.SMTP_USER}>`,
     to: booking.host.email,
     subject: `Cancelada: ${booking.eventType.title} con ${booking.guestName}`,
     html: hostHtml,

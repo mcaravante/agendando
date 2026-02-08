@@ -183,7 +183,7 @@ export const translations: Translations = {
 
   // Embed Modal
   'embed.title': { es: 'Agregar a sitio web', en: 'Add to website' },
-  'embed.howToAdd': { es: 'Como quieres agregar Agendame a tu sitio?', en: 'How do you want to add Agendame to your site?' },
+  'embed.howToAdd': { es: 'Como quieres agregar Agendando a tu sitio?', en: 'How do you want to add Agendando to your site?' },
   'embed.inline': { es: 'Inline embed', en: 'Inline embed' },
   'embed.inlineDesc': { es: 'Agrega el calendario directamente en tu sitio', en: 'Add the calendar directly to your site' },
   'embed.popupWidget': { es: 'Popup widget', en: 'Popup widget' },

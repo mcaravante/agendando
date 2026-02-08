@@ -119,7 +119,7 @@ export function DashboardLayout({ children }: Props) {
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
           <Link to="/dashboard" className="text-xl font-bold text-blue-600 dark:text-blue-400">
-            Agendame
+            Agendando
           </Link>
           <button
             className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"

@@ -157,7 +157,7 @@ export function PublicProfile() {
           <p className="text-sm text-gray-400">
             Powered by{' '}
             <Link to="/" className="text-blue-600 hover:text-blue-700 font-medium">
-              Agendame
+              Agendando
             </Link>
           </p>
         </div>

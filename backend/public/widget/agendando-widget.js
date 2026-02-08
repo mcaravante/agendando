@@ -2,11 +2,11 @@
   'use strict';
 
   // Configuration
-  const AGENDAME_BASE_URL = window.AGENDAME_BASE_URL || 'http://localhost:5173';
+  const AGENDANDO_BASE_URL = window.AGENDANDO_BASE_URL || 'http://localhost:5173';
 
   // Styles for the widget
   const styles = `
-    .agendame-overlay {
+    .agendando-overlay {
       position: fixed;
       top: 0;
       left: 0;
@@ -21,11 +21,11 @@
       visibility: hidden;
       transition: opacity 0.3s, visibility 0.3s;
     }
-    .agendame-overlay.active {
+    .agendando-overlay.active {
       opacity: 1;
       visibility: visible;
     }
-    .agendame-popup {
+    .agendando-popup {
       background: white;
       border-radius: 16px;
       width: 90%;
@@ -37,15 +37,15 @@
       transform: scale(0.9);
       transition: transform 0.3s;
     }
-    .agendame-overlay.active .agendame-popup {
+    .agendando-overlay.active .agendando-popup {
       transform: scale(1);
     }
-    .agendame-popup iframe {
+    .agendando-popup iframe {
       width: 100%;
       height: 100%;
       border: none;
     }
-    .agendame-close {
+    .agendando-close {
       position: absolute;
       top: 16px;
       right: 16px;
@@ -62,21 +62,21 @@
       z-index: 1000000;
       transition: transform 0.2s;
     }
-    .agendame-close:hover {
+    .agendando-close:hover {
       transform: scale(1.1);
     }
-    .agendame-close svg {
+    .agendando-close svg {
       width: 20px;
       height: 20px;
       color: #374151;
     }
-    .agendame-inline {
+    .agendando-inline {
       width: 100%;
       min-height: 600px;
       border: none;
       border-radius: 12px;
     }
-    .agendame-badge {
+    .agendando-badge {
       position: fixed;
       bottom: 24px;
       right: 24px;
@@ -95,11 +95,11 @@
       gap: 8px;
       transition: transform 0.2s, box-shadow 0.2s;
     }
-    .agendame-badge:hover {
+    .agendando-badge:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
     }
-    .agendame-badge svg {
+    .agendando-badge svg {
       width: 18px;
       height: 18px;
     }
@@ -111,9 +111,9 @@
 
   // Inject styles
   function injectStyles() {
-    if (document.getElementById('agendame-styles')) return;
+    if (document.getElementById('agendando-styles')) return;
     const styleEl = document.createElement('style');
-    styleEl.id = 'agendame-styles';
+    styleEl.id = 'agendando-styles';
     styleEl.textContent = styles;
     document.head.appendChild(styleEl);
   }
@@ -123,20 +123,20 @@
     injectStyles();
 
     // Remove existing popup
-    const existing = document.getElementById('agendame-overlay');
+    const existing = document.getElementById('agendando-overlay');
     if (existing) existing.remove();
 
     const overlay = document.createElement('div');
-    overlay.id = 'agendame-overlay';
-    overlay.className = 'agendame-overlay';
+    overlay.id = 'agendando-overlay';
+    overlay.className = 'agendando-overlay';
 
     const closeBtn = document.createElement('button');
-    closeBtn.className = 'agendame-close';
+    closeBtn.className = 'agendando-close';
     closeBtn.innerHTML = closeIcon;
     closeBtn.onclick = closePopup;
 
     const popup = document.createElement('div');
-    popup.className = 'agendame-popup';
+    popup.className = 'agendando-popup';
 
     const iframe = document.createElement('iframe');
     iframe.src = url + '?embed=popup';
@@ -172,7 +172,7 @@
   }
 
   function closePopup() {
-    const overlay = document.getElementById('agendame-overlay');
+    const overlay = document.getElementById('agendando-overlay');
     if (overlay) {
       overlay.classList.remove('active');
       document.body.style.overflow = '';
@@ -185,7 +185,7 @@
     injectStyles();
 
     const iframe = document.createElement('iframe');
-    iframe.className = 'agendame-inline';
+    iframe.className = 'agendando-inline';
     iframe.src = url + '?embed=inline';
     iframe.allow = 'payment';
 
@@ -207,7 +207,7 @@
     const color = options.color || '#3b82f6';
 
     const badge = document.createElement('button');
-    badge.className = 'agendame-badge';
+    badge.className = 'agendando-badge';
     badge.style.background = color;
     badge.innerHTML = calendarIcon + '<span>' + text + '</span>';
     badge.onclick = function() {
@@ -220,14 +220,14 @@
   // Initialize from data attributes
   function initFromDataAttributes() {
     // Inline embeds
-    document.querySelectorAll('[data-agendame-inline]').forEach(function(el) {
-      const url = el.getAttribute('data-agendame-inline');
+    document.querySelectorAll('[data-agendando-inline]').forEach(function(el) {
+      const url = el.getAttribute('data-agendando-inline');
       if (url) createInline(el, url);
     });
 
     // Popup triggers
-    document.querySelectorAll('[data-agendame-popup]').forEach(function(el) {
-      const url = el.getAttribute('data-agendame-popup');
+    document.querySelectorAll('[data-agendando-popup]').forEach(function(el) {
+      const url = el.getAttribute('data-agendando-popup');
       if (url) {
         el.style.cursor = 'pointer';
         el.onclick = function(e) {
@@ -238,22 +238,22 @@
     });
 
     // Badge widgets
-    document.querySelectorAll('[data-agendame-badge]').forEach(function(el) {
-      const url = el.getAttribute('data-agendame-badge');
-      const text = el.getAttribute('data-agendame-text');
-      const color = el.getAttribute('data-agendame-color');
+    document.querySelectorAll('[data-agendando-badge]').forEach(function(el) {
+      const url = el.getAttribute('data-agendando-badge');
+      const text = el.getAttribute('data-agendando-text');
+      const color = el.getAttribute('data-agendando-color');
       if (url) createBadge(url, { text, color });
       el.remove();
     });
   }
 
   // Public API
-  window.Agendame = {
+  window.Agendando = {
     popup: createPopup,
     inline: createInline,
     badge: createBadge,
     close: closePopup,
-    baseUrl: AGENDAME_BASE_URL
+    baseUrl: AGENDANDO_BASE_URL
   };
 
   // Auto-initialize when DOM is ready
@@ -265,12 +265,12 @@
 
   // Listen for messages from iframe
   window.addEventListener('message', function(event) {
-    if (event.data && event.data.type === 'agendame-close') {
+    if (event.data && event.data.type === 'agendando-close') {
       closePopup();
     }
-    if (event.data && event.data.type === 'agendame-booked') {
+    if (event.data && event.data.type === 'agendando-booked') {
       // Booking completed - could trigger custom event
-      const customEvent = new CustomEvent('agendame:booked', { detail: event.data.booking });
+      const customEvent = new CustomEvent('agendando:booked', { detail: event.data.booking });
       document.dispatchEvent(customEvent);
     }
   });
