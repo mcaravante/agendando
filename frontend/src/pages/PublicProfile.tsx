@@ -59,8 +59,6 @@ export function PublicProfile() {
     );
   }
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="container mx-auto px-4 py-12 max-w-xl">
@@ -69,7 +67,7 @@ export function PublicProfile() {
           <div className="w-28 h-28 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 mx-auto mb-4 flex items-center justify-center overflow-hidden shadow-lg">
             {profile.avatarUrl ? (
               <img
-                src={`${apiUrl}${profile.avatarUrl}`}
+                src={`/api${profile.avatarUrl}`}
                 alt={profile.name}
                 className="w-full h-full object-cover"
               />

@@ -8,14 +8,20 @@ interface MonthCalendarProps {
   selectedDate: Date | null;
   onDateSelect: (date: Date) => void;
   availableDays?: number[]; // 0-6, Sunday-Saturday
+  availableDates?: Set<string>; // 'YYYY-MM-DD' strings
   maxDaysInAdvance?: number;
+  onUnavailableClick?: (date: Date) => void;
+  onMonthChange?: (month: Date) => void;
 }
 
 export function MonthCalendar({
   selectedDate,
   onDateSelect,
   availableDays = [0, 1, 2, 3, 4, 5, 6],
+  availableDates,
   maxDaysInAdvance = 60,
+  onUnavailableClick,
+  onMonthChange,
 }: MonthCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -24,7 +30,6 @@ export function MonthCalendar({
   const maxDate = addDays(today, maxDaysInAdvance);
 
   const isDateDisabled = (date: Date) => {
-    const dayOfWeek = date.getDay();
     const dateStart = startOfDay(date);
 
     // Past dates
@@ -33,10 +38,17 @@ export function MonthCalendar({
     // Beyond max days
     if (isBefore(maxDate, dateStart)) return true;
 
-    // Not in available days
-    if (!availableDays.includes(dayOfWeek)) return true;
-
     return false;
+  };
+
+  const isDateUnavailable = (date: Date) => {
+    if (isDateDisabled(date)) return false; // disabled is a separate state
+    if (availableDates) {
+      const key = format(date, 'yyyy-MM-dd');
+      return !availableDates.has(key);
+    }
+    // Fallback to day-of-week check
+    return !availableDays.includes(date.getDay());
   };
 
   const isDateSelected = (date: Date) => {
@@ -44,11 +56,25 @@ export function MonthCalendar({
     return startOfDay(date).getTime() === startOfDay(selectedDate).getTime();
   };
 
+  const handleMonthChange = (newMonth: Date) => {
+    setCurrentMonth(newMonth);
+    onMonthChange?.(newMonth);
+  };
+
+  const handleDateClick = (date: Date) => {
+    if (isDateDisabled(date)) return;
+    if (isDateUnavailable(date)) {
+      onUnavailableClick?.(date);
+      return;
+    }
+    onDateSelect(date);
+  };
+
   return (
     <div className="bg-white rounded-xl border p-4">
       <div className="flex items-center justify-between mb-4">
         <button
-          onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+          onClick={() => handleMonthChange(subMonths(currentMonth, 1))}
           className="p-2 hover:bg-gray-100 rounded-lg text-gray-700"
           disabled={isSameMonth(currentMonth, new Date())}
         >
@@ -58,7 +84,7 @@ export function MonthCalendar({
           {format(currentMonth, 'MMMM yyyy', { locale: es })}
         </h3>
         <button
-          onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+          onClick={() => handleMonthChange(addMonths(currentMonth, 1))}
           className="p-2 hover:bg-gray-100 rounded-lg text-gray-700"
         >
           <ChevronRight className="w-5 h-5" />
@@ -77,6 +103,7 @@ export function MonthCalendar({
 
         {weeks.flat().map((date, index) => {
           const disabled = isDateDisabled(date);
+          const unavailable = isDateUnavailable(date);
           const selected = isDateSelected(date);
           const isCurrentMonth = isSameMonth(date, currentMonth);
           const isTodayDate = isToday(date);
@@ -84,13 +111,15 @@ export function MonthCalendar({
           return (
             <button
               key={index}
-              onClick={() => !disabled && onDateSelect(date)}
+              onClick={() => handleDateClick(date)}
               disabled={disabled}
               className={`
-                aspect-square flex items-center justify-center text-sm rounded-lg transition-colors text-gray-900
-                ${!isCurrentMonth ? 'text-gray-400' : ''}
-                ${disabled ? 'text-gray-400 cursor-not-allowed' : 'hover:bg-gray-100'}
-                ${selected ? 'bg-primary-600 text-white hover:bg-primary-700' : ''}
+                aspect-square flex items-center justify-center text-sm rounded-lg transition-colors
+                ${!isCurrentMonth ? 'text-gray-300' : ''}
+                ${disabled ? 'text-gray-300 cursor-not-allowed' : ''}
+                ${unavailable && !disabled && isCurrentMonth ? 'text-gray-400 line-through decoration-gray-300 cursor-pointer hover:bg-gray-50' : ''}
+                ${!disabled && !unavailable ? 'text-gray-900 hover:bg-gray-100 font-medium' : ''}
+                ${selected ? 'bg-primary-600 !text-white hover:bg-primary-700 no-underline' : ''}
                 ${isTodayDate && !selected ? 'ring-2 ring-primary-500 ring-inset' : ''}
               `}
             >

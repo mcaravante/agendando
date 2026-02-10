@@ -112,7 +112,7 @@ export function Profile() {
             <div className="w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
               {user?.avatarUrl ? (
                 <img
-                  src={user.avatarUrl}
+                  src={`/api${user.avatarUrl}`}
                   alt={user.name}
                   className="w-full h-full object-cover"
                 />

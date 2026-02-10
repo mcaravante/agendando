@@ -17,7 +17,7 @@ export const translations: Translations = {
   'nav.availability': { es: 'Disponibilidad', en: 'Availability' },
   'nav.contacts': { es: 'Contactos', en: 'Contacts' },
   'nav.bookings': { es: 'Reservas', en: 'Bookings' },
-  'nav.workflows': { es: 'Workflows', en: 'Workflows' },
+  'nav.workflows': { es: 'Notificaciones', en: 'Notifications' },
   'nav.integrations': { es: 'Integraciones', en: 'Integrations' },
   'nav.profile': { es: 'Perfil', en: 'Profile' },
   'nav.signOut': { es: 'Cerrar Sesion', en: 'Sign Out' },

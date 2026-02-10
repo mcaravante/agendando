@@ -391,7 +391,19 @@ async function processJob(jobId: string) {
   }
 }
 
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
+    .replace(/on\w+\s*=\s*"[^"]*"/gi, '')
+    .replace(/on\w+\s*=\s*'[^']*'/gi, '')
+    .replace(/javascript\s*:/gi, '');
+}
+
 async function processSendEmailJob(data: { to: string; subject: string; body: string }) {
+  const sanitizedSubject = data.subject.replace(/<[^>]+>/g, '');
+  const sanitizedBody = sanitizeHtml(data.body);
+
   // Import email service dynamically to avoid circular dependencies
   const nodemailer = await import('nodemailer');
 
@@ -405,11 +417,38 @@ async function processSendEmailJob(data: { to: string; subject: string; body: st
     },
   });
 
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background: #f3f4f6; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #3b82f6; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .header h1 { margin: 0; font-size: 20px; }
+    .content { padding: 24px; background: #ffffff; }
+    .footer { text-align: center; padding: 16px; color: #6b7280; font-size: 12px; border-radius: 0 0 8px 8px; background: #f9fafb; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>${sanitizedSubject}</h1>
+    </div>
+    <div class="content">
+      ${sanitizedBody}
+    </div>
+    <div class="footer">
+      <p>Powered by Agendando</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
   await transporter.sendMail({
     from: `"Agendando" <${process.env.SMTP_USER}>`,
     to: data.to,
-    subject: data.subject,
-    html: data.body,
+    subject: sanitizedSubject,
+    html,
   });
 }
 

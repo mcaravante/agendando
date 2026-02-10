@@ -32,6 +32,7 @@ app.use(express.json());
 
 // Serve static files (avatars)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Serve widget files with CORS for any origin (embeddable)
 app.use('/widget', cors(), express.static(path.join(__dirname, '../public/widget'), {

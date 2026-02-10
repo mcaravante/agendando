@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Clock, MapPin, Calendar, Check } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { es } from 'date-fns/locale';
 import { MonthCalendar } from '../components/calendar/MonthCalendar';
 import { TimeSlots } from '../components/calendar/TimeSlots';
@@ -9,6 +10,7 @@ import { BookingForm } from '../components/booking/BookingForm';
 import { Button } from '../components/common/Button';
 import { PageLoading } from '../components/common/Loading';
 import { useTimezone, COMMON_TIMEZONES } from '../hooks/useTimezone';
+import { useLanguage } from '../contexts/LanguageContext';
 import api from '../utils/api';
 import { EventType, User, AvailableSlot } from '../types';
 import toast from 'react-hot-toast';
@@ -22,23 +24,45 @@ interface EventData {
 
 export function BookingPage() {
   const { username, eventSlug } = useParams<{ username: string; eventSlug: string }>();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { timezone, setTimezone } = useTimezone();
+  const { language } = useLanguage();
 
   // Check if embedded
   const isEmbed = searchParams.get('embed') === 'popup' || searchParams.get('embed') === 'inline';
+
+  // Derive step from URL search params (enables browser back/forward)
+  const step: Step = (() => {
+    const s = searchParams.get('step');
+    if (s === 'time' || s === 'form' || s === 'confirmed') return s;
+    return 'date';
+  })();
+
+  const navigateToStep = (newStep: Step, params?: Record<string, string>, options?: { replace?: boolean }) => {
+    const newParams = new URLSearchParams();
+    const embed = searchParams.get('embed');
+    if (embed) newParams.set('embed', embed);
+    if (newStep !== 'date') {
+      newParams.set('step', newStep);
+    }
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        newParams.set(k, v);
+      }
+    }
+    setSearchParams(newParams, options);
+  };
 
   const [data, setData] = useState<EventData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [step, setStep] = useState<Step>('date');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [slots, setSlots] = useState<AvailableSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<AvailableSlot | null>(null);
   const [isSlotsLoading, setIsSlotsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [availableDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
+  const [availableDates, setAvailableDates] = useState<Set<string>>(new Set());
 
   // Force light mode on public booking page
   useEffect(() => {
@@ -60,10 +84,50 @@ export function BookingPage() {
   }, [username, eventSlug]);
 
   useEffect(() => {
+    loadAvailableDays(new Date());
+  }, [username, eventSlug, timezone]);
+
+  useEffect(() => {
     if (selectedDate) {
       loadSlots();
     }
   }, [selectedDate, timezone]);
+
+  // Restore selectedDate from URL on refresh/direct navigation
+  useEffect(() => {
+    const dateParam = searchParams.get('date');
+    if (dateParam && !selectedDate) {
+      const [y, m, d] = dateParam.split('-').map(Number);
+      setSelectedDate(new Date(y, m - 1, d));
+    }
+  }, [searchParams]);
+
+  // Clear selectedSlot when navigating back to time or date step
+  useEffect(() => {
+    if (step === 'date' || step === 'time') {
+      setSelectedSlot(null);
+    }
+  }, [step]);
+
+  const loadAvailableDays = async (month: Date) => {
+    try {
+      const monthStr = format(month, 'yyyy-MM');
+      const res = await api.get(`/public/${username}/${eventSlug}/available-days`, {
+        params: { month: monthStr, timezone },
+      });
+      setAvailableDates(new Set(res.data));
+    } catch {
+      // Fallback: all days available
+    }
+  };
+
+  const handleUnavailableClick = () => {
+    toast(language === 'es'
+      ? 'No hay disponibilidad para este día'
+      : 'No availability for this day',
+      { icon: '📅' }
+    );
+  };
 
   const loadEventData = async () => {
     try {
@@ -104,12 +168,12 @@ export function BookingPage() {
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
     setSelectedSlot(null);
-    setStep('time');
+    navigateToStep('time', { date: format(date, 'yyyy-MM-dd') });
   };
 
   const handleSlotSelect = (slot: AvailableSlot) => {
     setSelectedSlot(slot);
-    setStep('form');
+    navigateToStep('form', selectedDate ? { date: format(selectedDate, 'yyyy-MM-dd') } : undefined);
   };
 
   const handleFormSubmit = async (formData: { guestName: string; guestEmail: string; notes?: string }) => {
@@ -124,7 +188,7 @@ export function BookingPage() {
         guestTimezone: timezone,
         ...formData,
       });
-      setStep('confirmed');
+      navigateToStep('confirmed', undefined, { replace: true });
 
       // Notify parent window if embedded
       if (isEmbed && window.parent !== window) {
@@ -144,7 +208,7 @@ export function BookingPage() {
     } catch (error: any) {
       if (error.response?.status === 409) {
         toast.error('Este horario ya no está disponible. Por favor, elige otro.');
-        setStep('time');
+        navigateToStep('time', { date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '' }, { replace: true });
         loadSlots();
       } else {
         toast.error(error.response?.data?.error || 'Error al crear la reserva');
@@ -193,10 +257,10 @@ export function BookingPage() {
             <div className="bg-gray-50 rounded-lg p-4 text-left mb-6">
               <p className="font-semibold">{data.eventType.title}</p>
               <p className="text-sm text-gray-600">
-                {selectedDate && format(selectedDate, "EEEE d 'de' MMMM, yyyy", { locale: es })}
+                {selectedSlot && formatInTimeZone(selectedSlot.datetime, timezone, "EEEE d 'de' MMMM, yyyy", { locale: es })}
               </p>
               <p className="text-sm text-gray-600">
-                {selectedSlot?.time} ({timezone})
+                {selectedSlot && formatInTimeZone(selectedSlot.datetime, timezone, 'HH:mm')} ({timezone})
               </p>
             </div>
             <p className="text-sm text-gray-500">
@@ -230,7 +294,7 @@ export function BookingPage() {
                   <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                     {data.user.avatarUrl ? (
                       <img
-                        src={data.user.avatarUrl}
+                        src={`/api${data.user.avatarUrl}`}
                         alt={data.user.name}
                         className="w-full h-full object-cover"
                       />
@@ -264,16 +328,21 @@ export function BookingPage() {
                       {{ meet: 'Google Meet', zoom: 'Zoom', phone: 'Teléfono', 'in-person': 'En persona' }[data.eventType.location] || data.eventType.location}
                     </div>
                   )}
-                  {selectedDate && (
+                  {selectedSlot ? (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      {formatInTimeZone(selectedSlot.datetime, timezone, "EEEE d 'de' MMMM", { locale: es })}
+                    </div>
+                  ) : selectedDate ? (
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
                       {format(selectedDate, "EEEE d 'de' MMMM", { locale: es })}
                     </div>
-                  )}
+                  ) : null}
                   {selectedSlot && (
                     <div className="flex items-center gap-2 font-medium text-primary-600">
                       <Clock className="w-4 h-4" />
-                      {selectedSlot.time}
+                      {formatInTimeZone(selectedSlot.datetime, timezone, 'HH:mm')}
                     </div>
                   )}
                 </div>
@@ -305,7 +374,9 @@ export function BookingPage() {
                   <MonthCalendar
                     selectedDate={selectedDate}
                     onDateSelect={handleDateSelect}
-                    availableDays={availableDays}
+                    availableDates={availableDates}
+                    onUnavailableClick={handleUnavailableClick}
+                    onMonthChange={loadAvailableDays}
                   />
                 </div>
               )}
@@ -314,7 +385,7 @@ export function BookingPage() {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-gray-900">Selecciona un horario</h2>
-                    <Button variant="ghost" size="sm" onClick={() => setStep('date')}>
+                    <Button variant="ghost" size="sm" onClick={() => navigateToStep('date')}>
                       Cambiar fecha
                     </Button>
                   </div>
@@ -336,7 +407,7 @@ export function BookingPage() {
                   <div className="bg-white rounded-xl border p-6">
                     <BookingForm
                       onSubmit={handleFormSubmit}
-                      onBack={() => setStep('time')}
+                      onBack={() => navigateToStep('time', { date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '' })}
                       isLoading={isSubmitting}
                     />
                   </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -94,6 +94,17 @@ export function DashboardLayout({ children }: Props) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (userMenuOpen) setUserMenuOpen(false);
+        if (sidebarOpen) setSidebarOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [userMenuOpen, sidebarOpen]);
 
   const handleLogout = () => {
     logout();
@@ -197,7 +208,7 @@ export function DashboardLayout({ children }: Props) {
               >
                 {user?.avatarUrl ? (
                   <img
-                    src={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${user.avatarUrl}`}
+                    src={`/api${user.avatarUrl}`}
                     alt={user.name}
                     className="w-8 h-8 rounded-full object-cover"
                   />

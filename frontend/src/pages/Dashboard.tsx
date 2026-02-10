@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Loading } from '../components/common/Loading';
 import { Button } from '../components/common/Button';
 import { BookingList } from '../components/dashboard/BookingList';
 import { CreateEventTypeModal } from '../components/event-types/CreateEventTypeModal';
+import { ConfirmModal } from '../components/common/ConfirmModal';
 import api from '../utils/api';
 import { Booking } from '../types';
 import toast from 'react-hot-toast';
@@ -21,10 +23,13 @@ interface DashboardStats {
 
 export function Dashboard() {
   const { user } = useAuth();
+  const { language } = useLanguage();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -45,15 +50,22 @@ export function Dashboard() {
     }
   };
 
-  const handleCancel = async (id: string) => {
-    if (!confirm('Are you sure you want to cancel this meeting?')) return;
+  const handleCancel = (id: string) => {
+    setCancellingId(id);
+  };
 
+  const confirmCancel = async () => {
+    if (!cancellingId) return;
+    setIsCancelling(true);
     try {
-      await api.patch(`/bookings/${id}/cancel`);
-      toast.success('Meeting cancelled');
+      await api.patch(`/bookings/${cancellingId}/cancel`);
+      toast.success(language === 'es' ? 'Reunión cancelada' : 'Meeting cancelled');
       loadData();
     } catch (error) {
-      toast.error('Failed to cancel meeting');
+      toast.error(language === 'es' ? 'Error al cancelar' : 'Failed to cancel meeting');
+    } finally {
+      setIsCancelling(false);
+      setCancellingId(null);
     }
   };
 
@@ -266,6 +278,19 @@ export function Dashboard() {
           setIsCreateModalOpen(false);
           loadData();
         }}
+      />
+
+      <ConfirmModal
+        isOpen={!!cancellingId}
+        onClose={() => setCancellingId(null)}
+        onConfirm={confirmCancel}
+        title={language === 'es' ? 'Cancelar reunión' : 'Cancel meeting'}
+        message={language === 'es'
+          ? '¿Estás seguro de cancelar esta reunión?'
+          : 'Are you sure you want to cancel this meeting?'}
+        confirmLabel={language === 'es' ? 'Cancelar reunión' : 'Cancel meeting'}
+        cancelLabel={language === 'es' ? 'Volver' : 'Go back'}
+        isLoading={isCancelling}
       />
     </div>
   );

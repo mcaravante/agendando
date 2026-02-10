@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { api } from '../utils/api';
+import { ConfirmModal } from '../components/common/ConfirmModal';
 
 interface Integration {
   provider: string;
@@ -44,6 +45,8 @@ export function Integrations() {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
+  const [disconnectingProvider, setDisconnectingProvider] = useState<string | null>(null);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
 
   useEffect(() => {
     fetchIntegrations();
@@ -92,18 +95,23 @@ export function Integrations() {
     }
   };
 
-  const handleDisconnect = async (provider: string) => {
-    if (!confirm(language === 'es' ? '¿Estas seguro de desconectar esta integracion?' : 'Are you sure you want to disconnect this integration?')) {
-      return;
-    }
+  const handleDisconnect = (provider: string) => {
+    setDisconnectingProvider(provider);
+  };
 
+  const confirmDisconnect = async () => {
+    if (!disconnectingProvider) return;
+    setIsDisconnecting(true);
     try {
-      const endpoint = provider === 'GOOGLE_CALENDAR' ? '/integrations/google' : '/integrations/zoom';
+      const endpoint = disconnectingProvider === 'GOOGLE_CALENDAR' ? '/integrations/google' : '/integrations/zoom';
       await api.delete(endpoint);
-      toast.success(language === 'es' ? 'Integracion desconectada' : 'Integration disconnected');
+      toast.success(language === 'es' ? 'Integración desconectada' : 'Integration disconnected');
       fetchIntegrations();
     } catch (error: any) {
       toast.error(error.response?.data?.error || (language === 'es' ? 'Error al desconectar' : 'Failed to disconnect'));
+    } finally {
+      setIsDisconnecting(false);
+      setDisconnectingProvider(null);
     }
   };
 
@@ -214,6 +222,20 @@ export function Integrations() {
           </li>
         </ul>
       </div>
+
+      <ConfirmModal
+        isOpen={!!disconnectingProvider}
+        onClose={() => setDisconnectingProvider(null)}
+        onConfirm={confirmDisconnect}
+        title={language === 'es' ? 'Desconectar integración' : 'Disconnect integration'}
+        message={language === 'es'
+          ? '¿Estás seguro de desconectar esta integración? Tus reservas futuras no se sincronizarán.'
+          : 'Are you sure you want to disconnect this integration? Your future bookings will not be synced.'}
+        confirmLabel={language === 'es' ? 'Desconectar' : 'Disconnect'}
+        cancelLabel={language === 'es' ? 'Cancelar' : 'Cancel'}
+        variant="warning"
+        isLoading={isDisconnecting}
+      />
     </div>
   );
 }

@@ -8,6 +8,41 @@ import { TriggerType, ActionType } from '@prisma/client';
 
 const router = Router();
 
+const VALID_PLACEHOLDERS = ['guestName', 'guestEmail', 'hostName', 'eventTitle', 'startTime', 'duration'];
+
+const emailConfigSchema = z.object({
+  to: z.string().min(1),
+  subject: z.string().min(1).max(200),
+  body: z.string().min(1).max(10000),
+}).refine((data) => {
+  // Validate no script/event handler injection in subject or body
+  const dangerous = /<script[\s>]|javascript:|on\w+\s*=/i;
+  return !dangerous.test(data.subject) && !dangerous.test(data.body);
+}, { message: 'Content contains disallowed HTML or scripts' })
+.refine((data) => {
+  // Validate all placeholders are known
+  const allVars = [...(data.subject.match(/\{\{(\w+)\}\}/g) || []), ...(data.body.match(/\{\{(\w+)\}\}/g) || [])];
+  return allVars.every(v => VALID_PLACEHOLDERS.includes(v.replace(/\{|\}/g, '')));
+}, { message: 'Unknown placeholder variable' });
+
+const webhookConfigSchema = z.object({
+  url: z.string().url(),
+  method: z.enum(['GET', 'POST', 'PUT', 'PATCH']).optional(),
+});
+
+const actionSchema = z.object({
+  type: z.nativeEnum(ActionType),
+  config: z.any(),
+}).refine((action) => {
+  if (action.type === 'SEND_EMAIL') {
+    return emailConfigSchema.safeParse(action.config).success;
+  }
+  if (action.type === 'SEND_WEBHOOK') {
+    return webhookConfigSchema.safeParse(action.config).success;
+  }
+  return true;
+}, { message: 'Invalid action config' });
+
 const createWorkflowSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   triggers: z.array(
@@ -16,12 +51,7 @@ const createWorkflowSchema = z.object({
       config: z.any().optional(),
     })
   ).min(1, 'At least one trigger is required'),
-  actions: z.array(
-    z.object({
-      type: z.nativeEnum(ActionType),
-      config: z.any(),
-    })
-  ).min(1, 'At least one action is required'),
+  actions: z.array(actionSchema).min(1, 'At least one action is required'),
 });
 
 const updateWorkflowSchema = z.object({
@@ -33,12 +63,7 @@ const updateWorkflowSchema = z.object({
       config: z.any().optional(),
     })
   ).optional(),
-  actions: z.array(
-    z.object({
-      type: z.nativeEnum(ActionType),
-      config: z.any(),
-    })
-  ).optional(),
+  actions: z.array(actionSchema).optional(),
 });
 
 // Get all workflows for current user

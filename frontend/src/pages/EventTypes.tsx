@@ -6,6 +6,7 @@ import { Button } from '../components/common/Button';
 import { Loading } from '../components/common/Loading';
 import { EventTypeCard } from '../components/dashboard/EventTypeCard';
 import { CreateEventTypeModal } from '../components/event-types/CreateEventTypeModal';
+import { ConfirmModal } from '../components/common/ConfirmModal';
 import api from '../utils/api';
 import { EventType } from '../types';
 import toast from 'react-hot-toast';
@@ -17,6 +18,8 @@ export function EventTypes() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEventType, setEditingEventType] = useState<EventType | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadEventTypes();
@@ -43,15 +46,22 @@ export function EventTypes() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(language === 'es' ? '¿Estás seguro de eliminar este tipo de evento?' : 'Are you sure you want to delete this event type?')) return;
+  const handleDelete = (id: string) => {
+    setDeletingId(id);
+  };
 
+  const confirmDelete = async () => {
+    if (!deletingId) return;
+    setIsDeleting(true);
     try {
-      await api.delete(`/event-types/${id}`);
+      await api.delete(`/event-types/${deletingId}`);
       toast.success(language === 'es' ? 'Evento eliminado' : 'Event deleted');
       loadEventTypes();
     } catch (error) {
       toast.error(language === 'es' ? 'Error al eliminar' : 'Error deleting');
+    } finally {
+      setIsDeleting(false);
+      setDeletingId(null);
     }
   };
 
@@ -106,6 +116,19 @@ export function EventTypes() {
         onClose={() => setIsModalOpen(false)}
         onSuccess={loadEventTypes}
         editingEventType={editingEventType}
+      />
+
+      <ConfirmModal
+        isOpen={!!deletingId}
+        onClose={() => setDeletingId(null)}
+        onConfirm={confirmDelete}
+        title={language === 'es' ? 'Eliminar tipo de evento' : 'Delete event type'}
+        message={language === 'es'
+          ? '¿Estás seguro de eliminar este tipo de evento? Esta acción no se puede deshacer.'
+          : 'Are you sure you want to delete this event type? This action cannot be undone.'}
+        confirmLabel={language === 'es' ? 'Eliminar' : 'Delete'}
+        cancelLabel={language === 'es' ? 'Cancelar' : 'Cancel'}
+        isLoading={isDeleting}
       />
     </div>
   );

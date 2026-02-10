@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, Filter, Columns, MoreVertical, ChevronDown } from 'lucide-react';
+import { Search, Filter, Columns, ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 import { Loading } from '../components/common/Loading';
 import { useLanguage } from '../contexts/LanguageContext';
 import api from '../utils/api';
@@ -12,11 +12,16 @@ interface Contact {
   phoneNumber: string | null;
   lastMeetingDate: string | null;
   nextMeetingDate: string | null;
-  company: string | null;
   totalMeetings: number;
 }
 
-type ColumnKey = 'name' | 'email' | 'phoneNumber' | 'lastMeetingDate' | 'nextMeetingDate' | 'company';
+type ColumnKey = 'name' | 'email' | 'phoneNumber' | 'lastMeetingDate' | 'nextMeetingDate';
+type SortDirection = 'asc' | 'desc';
+
+interface SortConfig {
+  key: ColumnKey;
+  direction: SortDirection;
+}
 
 function getInitials(name: string): string {
   const words = name.trim().split(/\s+/);
@@ -36,6 +41,34 @@ function formatDate(dateString: string | null, language: string): string {
   });
 }
 
+const SORTABLE_COLUMNS: ColumnKey[] = ['name', 'email', 'lastMeetingDate', 'nextMeetingDate'];
+const COPYABLE_COLUMNS: ColumnKey[] = ['name', 'email', 'phoneNumber'];
+
+function CopyableCell({ value, children }: { value: string; children: React.ReactNode }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <div className="flex items-center gap-1 group">
+      {children}
+      <button
+        onClick={handleCopy}
+        className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-opacity flex-shrink-0"
+        title="Copiar"
+      >
+        {copied
+          ? <Check className="w-3.5 h-3.5 text-green-500" />
+          : <Copy className="w-3.5 h-3.5 text-gray-400" />}
+      </button>
+    </div>
+  );
+}
+
 export function Contacts() {
   const { t, language } = useLanguage();
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -47,11 +80,11 @@ export function Contacts() {
     'phoneNumber',
     'lastMeetingDate',
     'nextMeetingDate',
-    'company',
   ]);
   const [columnsDropdownOpen, setColumnsDropdownOpen] = useState(false);
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [filterMeetings, setFilterMeetings] = useState<'all' | 'upcoming' | 'past'>('all');
+  const [sort, setSort] = useState<SortConfig | null>(null);
 
   const columnsRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -62,7 +95,6 @@ export function Contacts() {
     { key: 'phoneNumber', labelKey: 'contacts.phone' },
     { key: 'lastMeetingDate', labelKey: 'contacts.lastMeeting' },
     { key: 'nextMeetingDate', labelKey: 'contacts.nextMeeting' },
-    { key: 'company', labelKey: 'contacts.company' },
   ];
 
   useEffect(() => {
@@ -79,8 +111,19 @@ export function Contacts() {
       }
     };
 
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setColumnsDropdownOpen(false);
+        setFilterDropdownOpen(false);
+      }
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
   }, []);
 
   const loadContacts = async () => {
@@ -100,6 +143,16 @@ export function Contacts() {
         ? prev.filter((c) => c !== columnKey)
         : [...prev, columnKey]
     );
+  };
+
+  const handleSort = (key: ColumnKey) => {
+    if (!SORTABLE_COLUMNS.includes(key)) return;
+    setSort((prev) => {
+      if (prev?.key === key) {
+        return prev.direction === 'asc' ? { key, direction: 'desc' } : null;
+      }
+      return { key, direction: 'asc' };
+    });
   };
 
   const filteredContacts = useMemo(() => {
@@ -122,12 +175,36 @@ export function Contacts() {
       result = result.filter((contact) => contact.lastMeetingDate && !contact.nextMeetingDate);
     }
 
+    // Sort
+    if (sort) {
+      result = [...result].sort((a, b) => {
+        const valA = a[sort.key];
+        const valB = b[sort.key];
+        if (valA == null && valB == null) return 0;
+        if (valA == null) return 1;
+        if (valB == null) return -1;
+        const cmp = String(valA).localeCompare(String(valB));
+        return sort.direction === 'asc' ? cmp : -cmp;
+      });
+    }
+
     return result;
-  }, [contacts, searchQuery, filterMeetings]);
+  }, [contacts, searchQuery, filterMeetings, sort]);
 
   if (isLoading) {
     return <Loading />;
   }
+
+  const SortIcon = ({ columnKey }: { columnKey: ColumnKey }) => {
+    if (!SORTABLE_COLUMNS.includes(columnKey)) return null;
+    const isActive = sort?.key === columnKey;
+    if (!isActive) {
+      return <ChevronDown className="w-3.5 h-3.5 text-gray-300 dark:text-gray-500" />;
+    }
+    return sort.direction === 'asc'
+      ? <ChevronUp className="w-3.5 h-3.5 text-blue-500" />
+      : <ChevronDown className="w-3.5 h-3.5 text-blue-500" />;
+  };
 
   return (
     <div>
@@ -225,62 +302,28 @@ export function Contacts() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                {visibleColumns.includes('name') && (
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    <div className="flex items-center gap-1">
-                      {t('contacts.name')}
-                      <MoreVertical className="w-4 h-4 text-gray-400" />
-                    </div>
-                  </th>
-                )}
-                {visibleColumns.includes('email') && (
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    <div className="flex items-center gap-1">
-                      {t('contacts.email')}
-                      <MoreVertical className="w-4 h-4 text-gray-400" />
-                    </div>
-                  </th>
-                )}
-                {visibleColumns.includes('phoneNumber') && (
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    <div className="flex items-center gap-1">
-                      {t('contacts.phone')}
-                      <MoreVertical className="w-4 h-4 text-gray-400" />
-                    </div>
-                  </th>
-                )}
-                {visibleColumns.includes('lastMeetingDate') && (
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    <div className="flex items-center gap-1">
-                      {t('contacts.lastMeeting')}
-                      <MoreVertical className="w-4 h-4 text-gray-400" />
-                    </div>
-                  </th>
-                )}
-                {visibleColumns.includes('nextMeetingDate') && (
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    <div className="flex items-center gap-1">
-                      {t('contacts.nextMeeting')}
-                      <MoreVertical className="w-4 h-4 text-gray-400" />
-                    </div>
-                  </th>
-                )}
-                {visibleColumns.includes('company') && (
-                  <th className="text-left px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    <div className="flex items-center gap-1">
-                      {t('contacts.company')}
-                      <MoreVertical className="w-4 h-4 text-gray-400" />
-                    </div>
-                  </th>
-                )}
-                <th className="w-10"></th>
+                {ALL_COLUMNS.filter(c => visibleColumns.includes(c.key)).map((column) => {
+                  const sortable = SORTABLE_COLUMNS.includes(column.key);
+                  return (
+                    <th
+                      key={column.key}
+                      className={`text-left px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 ${sortable ? 'cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-600/50' : ''}`}
+                      onClick={() => handleSort(column.key)}
+                    >
+                      <div className="flex items-center gap-1">
+                        {t(column.labelKey)}
+                        <SortIcon columnKey={column.key} />
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
               {filteredContacts.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={visibleColumns.length + 1}
+                    colSpan={visibleColumns.length}
                     className="px-4 py-12 text-center text-gray-500 dark:text-gray-400"
                   >
                     {searchQuery || filterMeetings !== 'all'
@@ -293,20 +336,30 @@ export function Contacts() {
                   <tr key={contact.id} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     {visibleColumns.includes('name') && (
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-400 flex items-center justify-center text-xs font-medium flex-shrink-0">
-                            {getInitials(contact.name)}
+                        <CopyableCell value={contact.name}>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-400 flex items-center justify-center text-xs font-medium flex-shrink-0">
+                              {getInitials(contact.name)}
+                            </div>
+                            <span className="font-medium text-gray-900 dark:text-white">{contact.name}</span>
                           </div>
-                          <span className="font-medium text-gray-900 dark:text-white">{contact.name}</span>
-                        </div>
+                        </CopyableCell>
                       </td>
                     )}
                     {visibleColumns.includes('email') && (
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{contact.email}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                        <CopyableCell value={contact.email}>
+                          <span>{contact.email}</span>
+                        </CopyableCell>
+                      </td>
                     )}
                     {visibleColumns.includes('phoneNumber') && (
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                        {contact.phoneNumber || '-'}
+                        {contact.phoneNumber ? (
+                          <CopyableCell value={contact.phoneNumber}>
+                            <span>{contact.phoneNumber}</span>
+                          </CopyableCell>
+                        ) : '-'}
                       </td>
                     )}
                     {visibleColumns.includes('lastMeetingDate') && (
@@ -319,16 +372,6 @@ export function Contacts() {
                         {formatDate(contact.nextMeetingDate, language)}
                       </td>
                     )}
-                    {visibleColumns.includes('company') && (
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                        {contact.company || '-'}
-                      </td>
-                    )}
-                    <td className="px-4 py-3">
-                      <button className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
-                        <MoreVertical className="w-4 h-4 text-gray-400" />
-                      </button>
-                    </td>
                   </tr>
                 ))
               )}
