@@ -14,7 +14,9 @@ import integrationsRoutes from './routes/integrations.routes';
 import workflowRoutes from './routes/workflow.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import contactsRoutes from './routes/contacts.routes';
+import webhookRoutes from './routes/webhook.routes';
 import { startJobProcessor } from './services/workflow.service';
+import { publicApiLimiter, authLimiter } from './middleware/rateLimit.middleware';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,16 +45,17 @@ app.use('/widget', cors(), express.static(path.join(__dirname, '../public/widget
 }));
 
 // Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/event-types', eventTypeRoutes);
 app.use('/api/availability', availabilityRoutes);
 app.use('/api/bookings', bookingRoutes);
-app.use('/api/public', publicRoutes);
+app.use('/api/public', publicApiLimiter, publicRoutes);
 app.use('/api/integrations', integrationsRoutes);
 app.use('/api/workflows', workflowRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/contacts', contactsRoutes);
+app.use('/api/webhooks', webhookRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -63,12 +66,14 @@ app.get('/api/health', (req, res) => {
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
 
-  // Start the job processor for workflows
-  startJobProcessor();
-  console.log('Job processor started');
-});
+    // Start the job processor for workflows
+    startJobProcessor();
+    console.log('Job processor started');
+  });
+}
 
 export default app;

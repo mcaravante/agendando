@@ -5,6 +5,8 @@ export interface User {
   name: string;
   timezone: string;
   avatarUrl?: string | null;
+  brandColor?: string | null;
+  logoUrl?: string | null;
   createdAt?: string;
 }
 
@@ -17,6 +19,8 @@ export interface EventType {
   duration: number;
   color: string;
   location?: string | null;
+  price?: number | null;
+  currency?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -58,10 +62,15 @@ export interface Booking {
   startTime: string;
   endTime: string;
   notes?: string | null;
-  status: 'CONFIRMED' | 'CANCELLED';
+  status: 'PENDING_PAYMENT' | 'CONFIRMED' | 'CANCELLED';
   cancellationToken: string;
   cancelledAt?: string | null;
   cancelReason?: string | null;
+  paymentId?: string | null;
+  paymentStatus?: string | null;
+  paymentAmount?: number | null;
+  requiresPayment?: boolean;
+  paymentUrl?: string;
   createdAt: string;
   eventType?: EventType;
   host?: User;
@@ -77,8 +86,10 @@ export interface PublicProfile {
   username: string;
   name: string;
   avatarUrl?: string | null;
+  brandColor?: string | null;
+  logoUrl?: string | null;
   timezone: string;
-  eventTypes: Pick<EventType, 'id' | 'title' | 'slug' | 'description' | 'duration' | 'color' | 'location'>[];
+  eventTypes: Pick<EventType, 'id' | 'title' | 'slug' | 'description' | 'duration' | 'color' | 'location' | 'price' | 'currency'>[];
 }
 
 export interface AuthResponse {

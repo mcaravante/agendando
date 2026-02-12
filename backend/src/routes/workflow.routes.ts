@@ -4,7 +4,9 @@ import { validateBody } from '../middleware/validate.middleware';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { AuthenticatedRequest } from '../types';
 import * as workflowService from '../services/workflow.service';
-import { TriggerType, ActionType } from '@prisma/client';
+import { PrismaClient, TriggerType, ActionType } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 const router = Router();
 
@@ -71,6 +73,68 @@ router.get('/', authMiddleware, async (req: AuthenticatedRequest, res: Response,
   try {
     const workflows = await workflowService.getWorkflows(req.user!.id);
     res.json(workflows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get delivery log (jobs) for current user
+router.get('/jobs', authMiddleware, async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    const userId = req.user!.id;
+    const type = req.query.type as string | undefined;
+    const status = req.query.status as string | undefined;
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const skip = (page - 1) * limit;
+
+    const where: any = { userId };
+    if (type) where.type = type;
+    if (status) where.status = status;
+
+    const [jobs, total] = await Promise.all([
+      prisma.job.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.job.count({ where }),
+    ]);
+
+    // Sanitize data → summary
+    const sanitized = jobs.map((job) => {
+      const data = job.data as any;
+      let summary: Record<string, string> = {};
+
+      if (job.type === 'SEND_EMAIL' || job.type === 'REMINDER_SEND_EMAIL') {
+        summary = { to: data?.to || data?.actionConfig?.to || '', subject: data?.subject || '' };
+      } else if (job.type === 'SEND_WEBHOOK' || job.type === 'REMINDER_SEND_WEBHOOK') {
+        summary = { url: data?.url || data?.actionConfig?.url || '', method: data?.method || data?.actionConfig?.method || 'POST' };
+      }
+
+      return {
+        id: job.id,
+        type: job.type,
+        status: job.status,
+        attempts: job.attempts,
+        error: job.error,
+        scheduledAt: job.scheduledAt,
+        completedAt: job.completedAt,
+        createdAt: job.createdAt,
+        summary,
+      };
+    });
+
+    res.json({
+      jobs: sanitized,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
     next(error);
   }

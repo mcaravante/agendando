@@ -13,14 +13,20 @@ const router = Router();
 const prisma = new PrismaClient();
 
 // Configure multer for avatar uploads
-const uploadDir = path.join(__dirname, '../../uploads/avatars');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+const avatarUploadDir = path.join(__dirname, '../../uploads/avatars');
+if (!fs.existsSync(avatarUploadDir)) {
+  fs.mkdirSync(avatarUploadDir, { recursive: true });
 }
 
-const storage = multer.diskStorage({
+// Configure multer for logo uploads
+const logoUploadDir = path.join(__dirname, '../../uploads/logos');
+if (!fs.existsSync(logoUploadDir)) {
+  fs.mkdirSync(logoUploadDir, { recursive: true });
+}
+
+const avatarStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadDir);
+    cb(null, avatarUploadDir);
   },
   filename: (req: AuthenticatedRequest, file, cb) => {
     const ext = path.extname(file.originalname);
@@ -28,22 +34,42 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.'));
-    }
+const logoStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, logoUploadDir);
   },
+  filename: (req: AuthenticatedRequest, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${req.user!.id}${ext}`);
+  },
+});
+
+const imageFileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.'));
+  }
+};
+
+const uploadAvatar = multer({
+  storage: avatarStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: imageFileFilter,
+});
+
+const uploadLogo = multer({
+  storage: logoStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: imageFileFilter,
 });
 
 const updateProfileSchema = z.object({
   name: z.string().min(1).optional(),
   timezone: z.string().optional(),
+  brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
+  logoUrl: z.null().optional(),
 });
 
 router.patch('/me', authMiddleware, validateBody(updateProfileSchema), async (req: AuthenticatedRequest, res: Response, next) => {
@@ -58,6 +84,8 @@ router.patch('/me', authMiddleware, validateBody(updateProfileSchema), async (re
         name: true,
         timezone: true,
         avatarUrl: true,
+        brandColor: true,
+        logoUrl: true,
       },
     });
     res.json(user);
@@ -66,7 +94,7 @@ router.patch('/me', authMiddleware, validateBody(updateProfileSchema), async (re
   }
 });
 
-router.post('/avatar', authMiddleware, upload.single('avatar'), async (req: AuthenticatedRequest, res: Response, next) => {
+router.post('/avatar', authMiddleware, uploadAvatar.single('avatar'), async (req: AuthenticatedRequest, res: Response, next) => {
   try {
     if (!req.file) {
       throw new AppError('No file uploaded', 400);
@@ -84,6 +112,37 @@ router.post('/avatar', authMiddleware, upload.single('avatar'), async (req: Auth
         name: true,
         timezone: true,
         avatarUrl: true,
+        brandColor: true,
+        logoUrl: true,
+      },
+    });
+
+    res.json(user);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/logo', authMiddleware, uploadLogo.single('logo'), async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    if (!req.file) {
+      throw new AppError('No file uploaded', 400);
+    }
+
+    const logoUrl = `/uploads/logos/${req.file.filename}`;
+
+    const user = await prisma.user.update({
+      where: { id: req.user!.id },
+      data: { logoUrl },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+        timezone: true,
+        avatarUrl: true,
+        brandColor: true,
+        logoUrl: true,
       },
     });
 
@@ -102,6 +161,8 @@ router.get('/:username', async (req, res, next) => {
         username: true,
         name: true,
         avatarUrl: true,
+        brandColor: true,
+        logoUrl: true,
         timezone: true,
       },
     });

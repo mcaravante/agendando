@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { z } from 'zod';
 import { AppError } from '../middleware/error.middleware';
 import { getAvailableSlots } from '../services/slot.service';
+import { joinWaitlist } from '../services/waitlist.service';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -16,6 +18,8 @@ router.get('/:username', async (req, res, next) => {
         username: true,
         name: true,
         avatarUrl: true,
+        brandColor: true,
+        logoUrl: true,
         timezone: true,
         eventTypes: {
           where: { isActive: true },
@@ -27,6 +31,8 @@ router.get('/:username', async (req, res, next) => {
             duration: true,
             color: true,
             location: true,
+            price: true,
+            currency: true,
           },
           orderBy: { createdAt: 'asc' },
         },
@@ -53,6 +59,8 @@ router.get('/:username/:eventSlug', async (req, res, next) => {
         username: true,
         name: true,
         avatarUrl: true,
+        brandColor: true,
+        logoUrl: true,
         timezone: true,
       },
     });
@@ -75,6 +83,8 @@ router.get('/:username/:eventSlug', async (req, res, next) => {
         duration: true,
         color: true,
         location: true,
+        price: true,
+        currency: true,
       },
     });
 
@@ -202,6 +212,82 @@ router.get('/:username/:eventSlug/slots', async (req, res, next) => {
     );
 
     res.json(slots);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get booking details (public, limited fields)
+router.get('/bookings/:bookingId', async (req, res, next) => {
+  try {
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_REGEX.test(req.params.bookingId)) {
+      throw new AppError('Invalid booking ID', 400);
+    }
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: req.params.bookingId },
+      select: {
+        id: true,
+        status: true,
+        startTime: true,
+        endTime: true,
+        guestTimezone: true,
+        paymentStatus: true,
+        eventType: {
+          select: {
+            title: true,
+            slug: true,
+            duration: true,
+            location: true,
+            price: true,
+            currency: true,
+          },
+        },
+        host: {
+          select: {
+            name: true,
+            username: true,
+            avatarUrl: true,
+            brandColor: true,
+            timezone: true,
+          },
+        },
+      },
+    });
+
+    if (!booking) {
+      throw new AppError('Booking not found', 404);
+    }
+
+    res.json(booking);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Join waitlist for an event type
+const waitlistSchema = z.object({
+  guestName: z.string().min(1).max(200),
+  guestEmail: z.string().email().max(320),
+});
+
+router.post('/:username/:eventSlug/waitlist', async (req, res, next) => {
+  try {
+    const parsed = waitlistSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new AppError('Invalid input', 400);
+    }
+
+    const { guestName, guestEmail } = parsed.data;
+    const entry = await joinWaitlist(
+      req.params.username,
+      req.params.eventSlug,
+      guestName,
+      guestEmail
+    );
+
+    res.status(201).json({ message: 'Joined waitlist', entry });
   } catch (error) {
     next(error);
   }

@@ -124,7 +124,7 @@ export async function getAvailableSlots(
   const existingBookings = await prisma.booking.findMany({
     where: {
       hostId: user.id,
-      status: 'CONFIRMED',
+      status: { in: ['CONFIRMED', 'PENDING_PAYMENT'] },
       startTime: {
         gte: dayStart,
         lte: dayEnd,

@@ -22,6 +22,8 @@ import { Integrations } from './pages/Integrations';
 import { Workflows } from './pages/Workflows';
 import { WorkflowEditor } from './pages/WorkflowEditor';
 import { Contacts } from './pages/Contacts';
+import { Analytics } from './pages/Analytics';
+import { PaymentResult } from './pages/PaymentResult';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -45,6 +47,7 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/cancel/:token" element={<CancelBooking />} />
+      <Route path="/booking/payment-result" element={<PaymentResult />} />
 
       {/* Protected routes with DashboardLayout */}
       <Route
@@ -113,6 +116,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <DashboardLayout>
               <Integrations />
+            </DashboardLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout>
+              <Analytics />
             </DashboardLayout>
           </ProtectedRoute>
         }

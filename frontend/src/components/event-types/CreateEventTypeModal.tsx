@@ -19,6 +19,8 @@ const eventTypeSchema = z.object({
   duration: z.coerce.number().min(5, 'Mínimo 5 minutos').max(480, 'Máximo 8 horas'),
   color: z.string(),
   location: z.string().optional(),
+  price: z.coerce.number().min(0).nullable().optional(),
+  currency: z.string().optional(),
 });
 
 type EventTypeFormData = z.infer<typeof eventTypeSchema>;
@@ -79,6 +81,8 @@ export function CreateEventTypeModal({
           duration: editingEventType.duration,
           color: editingEventType.color,
           location: editingEventType.location || '',
+          price: editingEventType.price != null ? Number(editingEventType.price) : null,
+          currency: editingEventType.currency || 'ARS',
         });
       } else {
         reset({
@@ -88,6 +92,8 @@ export function CreateEventTypeModal({
           duration: 30,
           color: '#3b82f6',
           location: '',
+          price: null,
+          currency: 'ARS',
         });
       }
     }
@@ -104,11 +110,16 @@ export function CreateEventTypeModal({
 
   const onSubmit = async (data: EventTypeFormData) => {
     try {
+      // Convert empty price string to null
+      const submitData = {
+        ...data,
+        price: data.price && Number(data.price) > 0 ? Number(data.price) : null,
+      };
       if (editingEventType) {
-        await api.patch(`/event-types/${editingEventType.id}`, data);
+        await api.patch(`/event-types/${editingEventType.id}`, submitData);
         toast.success('Evento actualizado');
       } else {
-        await api.post('/event-types', data);
+        await api.post('/event-types', submitData);
         toast.success('Evento creado');
       }
       onClose();
@@ -225,6 +236,27 @@ export function CreateEventTypeModal({
             ))}
           </div>
           <input type="hidden" {...register('location')} />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Precio (opcional)
+          </label>
+          <div className="flex items-center gap-2">
+            <span className="text-gray-500">$</span>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="Gratuito"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              {...register('price', { setValueAs: (v) => v === '' || v === null ? null : Number(v) })}
+            />
+            <span className="text-gray-500 text-sm">ARS</span>
+          </div>
+          <p className="mt-1 text-xs text-gray-500">
+            Dejar vacío para eventos gratuitos. Requiere MercadoPago conectado.
+          </p>
         </div>
 
         <div className="flex gap-3 pt-4">

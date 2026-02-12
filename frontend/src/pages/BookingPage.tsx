@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Clock, MapPin, Calendar, Check } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, Calendar, Check, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { es } from 'date-fns/locale';
 import { MonthCalendar } from '../components/calendar/MonthCalendar';
 import { TimeSlots } from '../components/calendar/TimeSlots';
 import { BookingForm } from '../components/booking/BookingForm';
+import { WaitlistForm } from '../components/booking/WaitlistForm';
 import { Button } from '../components/common/Button';
 import { PageLoading } from '../components/common/Loading';
 import { useTimezone, COMMON_TIMEZONES } from '../hooks/useTimezone';
@@ -16,6 +17,8 @@ import { EventType, User, AvailableSlot } from '../types';
 import toast from 'react-hot-toast';
 
 type Step = 'date' | 'time' | 'form' | 'confirmed';
+
+const DEFAULT_BRAND_COLOR = '#3b82f6';
 
 interface EventData {
   user: User;
@@ -188,6 +191,13 @@ export function BookingPage() {
         guestTimezone: timezone,
         ...formData,
       });
+
+      // If payment is required, redirect to MercadoPago
+      if (response.data.requiresPayment && response.data.paymentUrl) {
+        window.location.href = response.data.paymentUrl;
+        return;
+      }
+
       navigateToStep('confirmed', undefined, { replace: true });
 
       // Notify parent window if embedded
@@ -322,6 +332,12 @@ export function BookingPage() {
                     <Clock className="w-4 h-4" />
                     {data.eventType.duration} minutos
                   </div>
+                  {data.eventType.price != null && Number(data.eventType.price) > 0 && (
+                    <div className="flex items-center gap-2 font-semibold text-gray-900">
+                      <DollarSign className="w-4 h-4" />
+                      ${Number(data.eventType.price).toLocaleString()} {data.eventType.currency || 'ARS'}
+                    </div>
+                  )}
                   {data.eventType.location && (
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
@@ -340,7 +356,7 @@ export function BookingPage() {
                     </div>
                   ) : null}
                   {selectedSlot && (
-                    <div className="flex items-center gap-2 font-medium text-primary-600">
+                    <div className="flex items-center gap-2 font-medium" style={{ color: data.user.brandColor || DEFAULT_BRAND_COLOR }}>
                       <Clock className="w-4 h-4" />
                       {formatInTimeZone(selectedSlot.datetime, timezone, 'HH:mm')}
                     </div>
@@ -377,6 +393,7 @@ export function BookingPage() {
                     availableDates={availableDates}
                     onUnavailableClick={handleUnavailableClick}
                     onMonthChange={loadAvailableDays}
+                    accentColor={data.user.brandColor || DEFAULT_BRAND_COLOR}
                   />
                 </div>
               )}
@@ -396,8 +413,18 @@ export function BookingPage() {
                       onSlotSelect={handleSlotSelect}
                       isLoading={isSlotsLoading}
                       timezone={timezone}
+                      accentColor={data.user.brandColor || DEFAULT_BRAND_COLOR}
                     />
                   </div>
+                  {!isSlotsLoading && slots.length === 0 && (
+                    <div className="mt-4 bg-white rounded-xl border p-6">
+                      <WaitlistForm
+                        username={username!}
+                        eventSlug={eventSlug!}
+                        accentColor={data.user.brandColor || DEFAULT_BRAND_COLOR}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -409,6 +436,9 @@ export function BookingPage() {
                       onSubmit={handleFormSubmit}
                       onBack={() => navigateToStep('time', { date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '' })}
                       isLoading={isSubmitting}
+                      accentColor={data.user.brandColor || DEFAULT_BRAND_COLOR}
+                      price={data.eventType.price != null ? Number(data.eventType.price) : undefined}
+                      currency={data.eventType.currency}
                     />
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { api } from '../utils/api';
@@ -112,6 +112,25 @@ const defaultNotifications: Notification[] = [
   },
 ];
 
+interface DeliveryJob {
+  id: string;
+  type: string;
+  status: string;
+  attempts: number;
+  error: string | null;
+  scheduledAt: string;
+  completedAt: string | null;
+  createdAt: string;
+  summary: { to?: string; subject?: string; url?: string; method?: string };
+}
+
+interface DeliveryPagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export function Workflows() {
   const { t, language } = useLanguage();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
@@ -121,6 +140,15 @@ export function Workflows() {
   const [editBody, setEditBody] = useState('');
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+
+  // Delivery Log state
+  const [logExpanded, setLogExpanded] = useState(false);
+  const [logJobs, setLogJobs] = useState<DeliveryJob[]>([]);
+  const [logPagination, setLogPagination] = useState<DeliveryPagination | null>(null);
+  const [logLoading, setLogLoading] = useState(false);
+  const [logTypeFilter, setLogTypeFilter] = useState<string>('');
+  const [logStatusFilter, setLogStatusFilter] = useState<string>('');
+  const [logPage, setLogPage] = useState(1);
 
   useEffect(() => {
     fetchWorkflows();
@@ -137,6 +165,30 @@ export function Workflows() {
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, [showPreview, editingId]);
+
+  const fetchDeliveryLog = useCallback(async () => {
+    setLogLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set('page', logPage.toString());
+      params.set('limit', '20');
+      if (logTypeFilter) params.set('type', logTypeFilter);
+      if (logStatusFilter) params.set('status', logStatusFilter);
+      const response = await api.get(`/workflows/jobs?${params.toString()}`);
+      setLogJobs(response.data.jobs);
+      setLogPagination(response.data.pagination);
+    } catch {
+      // Silently fail
+    } finally {
+      setLogLoading(false);
+    }
+  }, [logPage, logTypeFilter, logStatusFilter]);
+
+  useEffect(() => {
+    if (logExpanded) {
+      fetchDeliveryLog();
+    }
+  }, [logExpanded, fetchDeliveryLog]);
 
   const fetchWorkflows = async () => {
     try {
@@ -480,6 +532,179 @@ export function Workflows() {
             </div>
           );
         })}
+      </div>
+
+      {/* Delivery Log */}
+      <div className="mt-8">
+        <button
+          onClick={() => setLogExpanded(!logExpanded)}
+          className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+        >
+          <svg
+            className={`w-5 h-5 transition-transform ${logExpanded ? 'rotate-90' : ''}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          {t('workflows.deliveryLog')}
+        </button>
+
+        {logExpanded && (
+          <div className="mt-4 space-y-4">
+            {/* Filters */}
+            <div className="flex flex-wrap gap-2">
+              {/* Type filter */}
+              {[
+                { value: '', label: t('workflows.deliveryLog.filterAll') },
+                { value: 'SEND_EMAIL', label: t('workflows.deliveryLog.filterEmails') },
+                { value: 'SEND_WEBHOOK', label: t('workflows.deliveryLog.filterWebhooks') },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => { setLogTypeFilter(opt.value); setLogPage(1); }}
+                  className={`px-3 py-1 text-sm rounded-full border transition-colors ${
+                    logTypeFilter === opt.value
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+              <span className="mx-1" />
+              {/* Status filter */}
+              {[
+                { value: '', label: t('workflows.deliveryLog.filterAll') },
+                { value: 'COMPLETED', label: t('workflows.deliveryLog.statusCompleted') },
+                { value: 'FAILED', label: t('workflows.deliveryLog.statusFailed') },
+                { value: 'PENDING', label: t('workflows.deliveryLog.statusPending') },
+              ].map((opt) => (
+                <button
+                  key={`s-${opt.value}`}
+                  onClick={() => { setLogStatusFilter(opt.value); setLogPage(1); }}
+                  className={`px-3 py-1 text-sm rounded-full border transition-colors ${
+                    logStatusFilter === opt.value
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {logLoading ? (
+              <div className="flex items-center justify-center h-24">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              </div>
+            ) : logJobs.length === 0 ? (
+              <p className="text-gray-500 dark:text-gray-400 text-sm py-4">
+                {t('workflows.deliveryLog.empty')}
+              </p>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  {logJobs.map((job) => {
+                    const isEmail = job.type.includes('EMAIL');
+                    const destination = isEmail
+                      ? `${job.summary.to || ''} — ${job.summary.subject || ''}`
+                      : `${job.summary.method || 'POST'} ${job.summary.url || ''}`;
+
+                    const statusColor = {
+                      COMPLETED: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400',
+                      FAILED: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400',
+                      PENDING: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400',
+                      PROCESSING: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400',
+                    }[job.status] || 'bg-gray-100 text-gray-600';
+
+                    const statusLabel = {
+                      COMPLETED: t('workflows.deliveryLog.statusCompleted'),
+                      FAILED: t('workflows.deliveryLog.statusFailed'),
+                      PENDING: t('workflows.deliveryLog.statusPending'),
+                      PROCESSING: t('workflows.deliveryLog.statusProcessing'),
+                    }[job.status] || job.status;
+
+                    return (
+                      <div
+                        key={job.id}
+                        className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 text-sm"
+                      >
+                        {/* Type badge */}
+                        <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          isEmail
+                            ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
+                            : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
+                        }`}>
+                          {isEmail ? t('workflows.deliveryLog.typeEmail') : t('workflows.deliveryLog.typeWebhook')}
+                        </span>
+
+                        {/* Destination */}
+                        <span className="flex-1 truncate text-gray-700 dark:text-gray-300" title={destination}>
+                          {destination}
+                        </span>
+
+                        {/* Status */}
+                        <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>
+                          {statusLabel}
+                        </span>
+
+                        {/* Attempts */}
+                        <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400" title={t('workflows.deliveryLog.attempts')}>
+                          ×{job.attempts}
+                        </span>
+
+                        {/* Timestamp */}
+                        <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">
+                          {new Date(job.createdAt).toLocaleString()}
+                        </span>
+
+                        {/* Error indicator */}
+                        {job.error && (
+                          <span
+                            className="shrink-0 text-red-500 cursor-help"
+                            title={job.error}
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Pagination */}
+                {logPagination && logPagination.totalPages > 1 && (
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {logPagination.total} {logPagination.total === 1 ? 'job' : 'jobs'}
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        disabled={logPage <= 1}
+                        onClick={() => setLogPage(logPage - 1)}
+                        className="px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-40 hover:border-blue-400"
+                      >
+                        {t('common.back')}
+                      </button>
+                      <span className="px-2 py-1 text-sm text-gray-600 dark:text-gray-400">
+                        {logPage} / {logPagination.totalPages}
+                      </span>
+                      <button
+                        disabled={logPage >= logPagination.totalPages}
+                        onClick={() => setLogPage(logPage + 1)}
+                        className="px-3 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-40 hover:border-blue-400"
+                      >
+                        {t('common.next')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {showPreview && (

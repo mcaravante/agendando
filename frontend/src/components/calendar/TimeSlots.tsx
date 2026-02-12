@@ -7,6 +7,7 @@ interface TimeSlotsProps {
   onSlotSelect: (slot: AvailableSlot) => void;
   isLoading?: boolean;
   timezone: string;
+  accentColor?: string;
 }
 
 export function TimeSlots({
@@ -15,6 +16,7 @@ export function TimeSlots({
   onSlotSelect,
   isLoading,
   timezone,
+  accentColor,
 }: TimeSlotsProps) {
   if (isLoading) {
     return <Loading text="Cargando horarios..." />;
@@ -34,21 +36,34 @@ export function TimeSlots({
         Horarios en tu zona: {timezone}
       </p>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-80 overflow-y-auto">
-        {slots.map((slot) => (
-          <button
-            key={slot.datetime}
-            onClick={() => onSlotSelect(slot)}
-            className={`
-              px-4 py-2 text-sm rounded-lg border transition-colors
-              ${selectedSlot === slot.datetime
-                ? 'bg-primary-600 text-white border-primary-600'
-                : 'bg-white text-gray-700 border-gray-300 hover:border-primary-500 hover:bg-primary-50'
-              }
-            `}
-          >
-            {slot.time}
-          </button>
-        ))}
+        {slots.map((slot) => {
+          const isSelected = selectedSlot === slot.datetime;
+          return (
+            <button
+              key={slot.datetime}
+              onClick={() => onSlotSelect(slot)}
+              className={`
+                px-4 py-2 text-sm rounded-lg border transition-colors
+                ${!accentColor && isSelected ? 'bg-primary-600 text-white border-primary-600' : ''}
+                ${!accentColor && !isSelected ? 'bg-white text-gray-700 border-gray-300 hover:border-primary-500 hover:bg-primary-50' : ''}
+                ${accentColor && !isSelected ? 'bg-white text-gray-700 border-gray-300' : ''}
+              `}
+              style={accentColor ? {
+                ...(isSelected
+                  ? { backgroundColor: accentColor, color: 'white', borderColor: accentColor }
+                  : {}),
+              } : undefined}
+              onMouseEnter={accentColor && !isSelected ? (e) => {
+                e.currentTarget.style.borderColor = accentColor;
+              } : undefined}
+              onMouseLeave={accentColor && !isSelected ? (e) => {
+                e.currentTarget.style.borderColor = '#d1d5db';
+              } : undefined}
+            >
+              {slot.time}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

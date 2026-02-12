@@ -14,6 +14,8 @@ model User {
   passwordHash String
   name         String
   avatarUrl    String?
+  brandColor   String?  // hex color, e.g. "#3b82f6"
+  logoUrl      String?
   timezone     String   @default("America/Argentina/Buenos_Aires")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -23,6 +25,7 @@ model User {
   bookingsAsHost Booking[]     @relation("HostBookings")
   integrations   Integration[]
   workflows      Workflow[]
+  jobs           Job[]
 
   @@map("users")
 }
@@ -36,12 +39,15 @@ model EventType {
   duration    Int      // in minutes
   color       String   @default("#3b82f6")
   location    String?  // zoom, meet, phone, in-person, custom
+  price       Decimal? @db.Decimal(10, 2) // null = free
+  currency    String   @default("ARS")
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bookings Booking[]
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings        Booking[]
+  waitlistEntries WaitlistEntry[]
 
   @@unique([userId, slug])
   @@map("event_types")
@@ -92,6 +98,13 @@ model Booking {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
+  paymentId        String?
+  paymentStatus    String?    // 'pending','approved','rejected','expired'
+  paymentProvider  String?    // 'mercadopago'
+  paymentAmount    Decimal?   @db.Decimal(10, 2)
+  preferenceId     String?    // MP preference ID
+  paymentExpiresAt DateTime?  // when PENDING_PAYMENT expires
+
   eventType     EventType      @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
   host          User           @relation("HostBookings", fields: [hostId], references: [id], onDelete: Cascade)
   calendarEvent CalendarEvent?
@@ -100,6 +113,7 @@ model Booking {
 }
 
 enum BookingStatus {
+  PENDING_PAYMENT
   CONFIRMED
   CANCELLED
 }
@@ -120,6 +134,19 @@ model SchedulingConfig {
   maxDaysInAdvance Int    @default(60) // how far ahead can book
 
   @@map("scheduling_configs")
+}
+
+model WaitlistEntry {
+  id          String    @id @default(uuid())
+  eventTypeId String
+  guestName   String
+  guestEmail  String
+  createdAt   DateTime  @default(now())
+
+  eventType EventType @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([eventTypeId, guestEmail])
+  @@map("waitlist_entries")
 }
 
 // ==================== INTEGRACIONES ====================
@@ -145,6 +172,7 @@ model Integration {
 enum IntegrationProvider {
   GOOGLE_CALENDAR
   ZOOM
+  MERCADOPAGO
 }
 
 model CalendarEvent {
@@ -222,7 +250,10 @@ model Job {
   scheduledAt DateTime
   completedAt DateTime?
   createdAt   DateTime  @default(now())
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([status, scheduledAt])
+  @@index([userId, type])
   @@map("jobs")
 }

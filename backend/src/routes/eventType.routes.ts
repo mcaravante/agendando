@@ -20,6 +20,8 @@ const createEventTypeSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Invalid color format').optional(),
   location: z.string().optional(),
   isActive: z.boolean().optional(),
+  price: z.number().min(0).nullable().optional(),
+  currency: z.string().length(3).optional(),
 });
 
 const updateEventTypeSchema = createEventTypeSchema.partial();

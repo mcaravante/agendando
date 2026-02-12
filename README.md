@@ -41,7 +41,7 @@ npm run db:push
 npm run dev
 ```
 
-El backend estará disponible en `http://localhost:3000`
+El backend estará disponible en `http://localhost:3002`
 
 ### 3. Frontend
 

@@ -4,11 +4,14 @@ import { PageLoading } from '../components/common/Loading';
 import api from '../utils/api';
 import { PublicProfile as PublicProfileType } from '../types';
 
+const DEFAULT_BRAND_COLOR = '#3b82f6';
+
 export function PublicProfile() {
   const { username } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<PublicProfileType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
   useEffect(() => {
     loadProfile();
@@ -59,24 +62,39 @@ export function PublicProfile() {
     );
   }
 
+  const brandColor = profile.brandColor || DEFAULT_BRAND_COLOR;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="container mx-auto px-4 py-12 max-w-xl">
         {/* Profile header */}
         <div className="text-center mb-10">
-          <div className="w-28 h-28 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 mx-auto mb-4 flex items-center justify-center overflow-hidden shadow-lg">
-            {profile.avatarUrl ? (
+          {profile.logoUrl ? (
+            <div className="w-28 h-28 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden shadow-lg bg-white">
               <img
-                src={`/api${profile.avatarUrl}`}
+                src={`/api${profile.logoUrl}`}
                 alt={profile.name}
-                className="w-full h-full object-cover"
+                className="max-w-full max-h-full object-contain"
               />
-            ) : (
-              <span className="text-4xl font-medium text-white">
-                {profile.name.charAt(0).toUpperCase()}
-              </span>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div
+              className="w-28 h-28 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden shadow-lg"
+              style={{ background: `linear-gradient(135deg, ${brandColor}, ${brandColor}dd)` }}
+            >
+              {profile.avatarUrl ? (
+                <img
+                  src={`/api${profile.avatarUrl}`}
+                  alt={profile.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-4xl font-medium text-white">
+                  {profile.name.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+          )}
           <h1 className="text-3xl font-bold text-gray-900">{profile.name}</h1>
           <p className="text-gray-500 mt-1">@{profile.username}</p>
         </div>
@@ -101,15 +119,25 @@ export function PublicProfile() {
                 key={eventType.id}
                 to={`/${username}/${eventType.slug}`}
                 className="block group"
+                onMouseEnter={() => setHoveredCard(eventType.id)}
+                onMouseLeave={() => setHoveredCard(null)}
               >
-                <div className="bg-white rounded-xl border-2 border-gray-200 p-5 hover:border-blue-500 hover:shadow-md transition-all duration-200">
+                <div
+                  className="bg-white rounded-xl border-2 p-5 hover:shadow-md transition-all duration-200"
+                  style={{
+                    borderColor: hoveredCard === eventType.id ? brandColor : '#e5e7eb',
+                  }}
+                >
                   <div className="flex items-start gap-4">
                     <div
                       className="w-1.5 h-14 rounded-full flex-shrink-0"
                       style={{ backgroundColor: eventType.color }}
                     />
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-lg text-gray-900 group-hover:text-blue-600 transition-colors">
+                      <h3
+                        className="font-semibold text-lg transition-colors"
+                        style={{ color: hoveredCard === eventType.id ? brandColor : '#111827' }}
+                      >
                         {eventType.title}
                       </h3>
                       {eventType.description && (
@@ -136,9 +164,20 @@ export function PublicProfile() {
                             {!['zoom', 'meet', 'phone', 'in-person'].includes(eventType.location || '') && eventType.location}
                           </div>
                         )}
+                        {eventType.price != null && Number(eventType.price) > 0 && (
+                          <div className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: brandColor }}>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            ${Number(eventType.price).toLocaleString()} {eventType.currency || 'ARS'}
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="flex-shrink-0 text-gray-400 group-hover:text-blue-500 transition-colors">
+                    <div
+                      className="flex-shrink-0 transition-colors"
+                      style={{ color: hoveredCard === eventType.id ? brandColor : '#9ca3af' }}
+                    >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
@@ -154,7 +193,7 @@ export function PublicProfile() {
         <div className="mt-12 text-center">
           <p className="text-sm text-gray-400">
             Powered by{' '}
-            <Link to="/" className="text-blue-600 hover:text-blue-700 font-medium">
+            <Link to="/" className="font-medium" style={{ color: brandColor }}>
               Agendando
             </Link>
           </p>

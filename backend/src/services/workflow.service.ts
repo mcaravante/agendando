@@ -233,6 +233,7 @@ async function executeEmailAction(config: any, booking: BookingWithDetails) {
         body: finalBody,
       },
       scheduledAt: new Date(),
+      userId: booking.hostId,
     },
   });
 }
@@ -261,6 +262,7 @@ async function executeWebhookAction(config: any, booking: BookingWithDetails) {
         },
       },
       scheduledAt: new Date(),
+      userId: booking.hostId,
     },
   });
 }
@@ -312,6 +314,7 @@ export async function scheduleReminders(booking: BookingWithDetails) {
                 triggerType: trigger.type,
               },
               scheduledAt,
+              userId: booking.hostId,
             },
           });
         }
@@ -495,8 +498,32 @@ async function processReminderJob(data: {
   await executeAction(data.actionType, data.actionConfig, booking as BookingWithDetails);
 }
 
+// Cleanup expired PENDING_PAYMENT bookings
+async function cleanupExpiredPayments() {
+  try {
+    const result = await prisma.booking.updateMany({
+      where: {
+        status: 'PENDING_PAYMENT',
+        paymentExpiresAt: { lt: new Date() },
+      },
+      data: {
+        status: 'CANCELLED',
+        cancelledAt: new Date(),
+        cancelReason: 'Payment expired',
+        paymentStatus: 'expired',
+      },
+    });
+    if (result.count > 0) {
+      console.log(`Cleaned up ${result.count} expired payment bookings`);
+    }
+  } catch (error) {
+    console.error('Payment cleanup error:', error);
+  }
+}
+
 // Start job processor (call this on server start)
 let jobProcessorInterval: NodeJS.Timeout | null = null;
+let paymentCleanupInterval: NodeJS.Timeout | null = null;
 
 export function startJobProcessor() {
   if (jobProcessorInterval) return;
@@ -510,13 +537,23 @@ export function startJobProcessor() {
     }
   }, 30000);
 
+  // Cleanup expired payments every 5 minutes
+  paymentCleanupInterval = setInterval(async () => {
+    await cleanupExpiredPayments();
+  }, 5 * 60 * 1000);
+
   // Process immediately on start
   processJobs().catch(console.error);
+  cleanupExpiredPayments().catch(console.error);
 }
 
 export function stopJobProcessor() {
   if (jobProcessorInterval) {
     clearInterval(jobProcessorInterval);
     jobProcessorInterval = null;
+  }
+  if (paymentCleanupInterval) {
+    clearInterval(paymentCleanupInterval);
+    paymentCleanupInterval = null;
   }
 }

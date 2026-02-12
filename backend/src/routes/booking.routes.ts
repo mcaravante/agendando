@@ -4,6 +4,7 @@ import { validateBody } from '../middleware/validate.middleware';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { AuthenticatedRequest } from '../types';
 import * as bookingService from '../services/booking.service';
+import { bookingLimiter, publicApiLimiter } from '../middleware/rateLimit.middleware';
 
 const router = Router();
 
@@ -22,7 +23,7 @@ const cancelBookingSchema = z.object({
 });
 
 // Create booking (public endpoint)
-router.post('/', validateBody(createBookingSchema), async (req, res, next) => {
+router.post('/', bookingLimiter, validateBody(createBookingSchema), async (req, res, next) => {
   try {
     const booking = await bookingService.createBooking(req.body);
     res.status(201).json(booking);
@@ -67,7 +68,7 @@ router.patch('/:id/cancel', authMiddleware, validateBody(cancelBookingSchema), a
 });
 
 // Cancel booking by token (public endpoint for guests)
-router.post('/cancel/:token', validateBody(cancelBookingSchema), async (req, res, next) => {
+router.post('/cancel/:token', publicApiLimiter, validateBody(cancelBookingSchema), async (req, res, next) => {
   try {
     const booking = await bookingService.cancelBookingByToken(
       req.params.token,

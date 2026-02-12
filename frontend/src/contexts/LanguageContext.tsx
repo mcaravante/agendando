@@ -280,6 +280,24 @@ export const translations: Translations = {
   'waitlist.yourName': { es: 'Tu nombre', en: 'Your name' },
   'waitlist.yourEmail': { es: 'Tu email', en: 'Your email' },
 
+  // Payments
+  'payment.payAndBook': { es: 'Pagar y Reservar', en: 'Pay and Book' },
+  'payment.free': { es: 'Gratuito', en: 'Free' },
+  'payment.price': { es: 'Precio', en: 'Price' },
+  'payment.confirmed': { es: 'Pago confirmado', en: 'Payment confirmed' },
+  'payment.failed': { es: 'Pago fallido', en: 'Payment failed' },
+  'payment.failedMessage': { es: 'El pago no se pudo completar. Por favor, intenta nuevamente.', en: 'The payment could not be completed. Please try again.' },
+  'payment.pending': { es: 'Pago pendiente', en: 'Payment pending' },
+  'payment.pendingMessage': { es: 'Tu pago esta siendo procesado. Recibiras un email de confirmacion cuando se complete.', en: 'Your payment is being processed. You will receive a confirmation email when it is completed.' },
+  'payment.retry': { es: 'Intentar nuevamente', en: 'Try again' },
+  'payment.processingMessage': { es: 'Tu pago esta siendo procesado. Te notificaremos cuando se confirme.', en: 'Your payment is being processed. We\'ll notify you when it\'s confirmed.' },
+  'payment.priceHelp': { es: 'Dejar vacio para eventos gratuitos', en: 'Leave empty for free events' },
+  'payment.expired': { es: 'El pago expiro. El turno fue liberado.', en: 'Payment expired. The slot has been released.' },
+
+  // Integration names
+  'integrations.mpName': { es: 'MercadoPago', en: 'MercadoPago' },
+  'integrations.mpDescription': { es: 'Cobra por tus eventos usando MercadoPago Checkout Pro.', en: 'Accept payments for your events using MercadoPago Checkout Pro.' },
+
   // Errors & Toasts
   'toast.error': { es: 'Error', en: 'Error' },
   'toast.success': { es: 'Exito', en: 'Success' },

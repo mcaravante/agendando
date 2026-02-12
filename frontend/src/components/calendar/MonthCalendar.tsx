@@ -12,6 +12,7 @@ interface MonthCalendarProps {
   maxDaysInAdvance?: number;
   onUnavailableClick?: (date: Date) => void;
   onMonthChange?: (month: Date) => void;
+  accentColor?: string;
 }
 
 export function MonthCalendar({
@@ -22,6 +23,7 @@ export function MonthCalendar({
   maxDaysInAdvance = 60,
   onUnavailableClick,
   onMonthChange,
+  accentColor,
 }: MonthCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -119,9 +121,13 @@ export function MonthCalendar({
                 ${disabled ? 'text-gray-300 cursor-not-allowed' : ''}
                 ${unavailable && !disabled && isCurrentMonth ? 'text-gray-400 line-through decoration-gray-300 cursor-pointer hover:bg-gray-50' : ''}
                 ${!disabled && !unavailable ? 'text-gray-900 hover:bg-gray-100 font-medium' : ''}
-                ${selected ? 'bg-primary-600 !text-white hover:bg-primary-700 no-underline' : ''}
-                ${isTodayDate && !selected ? 'ring-2 ring-primary-500 ring-inset' : ''}
+                ${selected && !accentColor ? 'bg-primary-600 !text-white hover:bg-primary-700 no-underline' : ''}
+                ${isTodayDate && !selected && !accentColor ? 'ring-2 ring-primary-500 ring-inset' : ''}
               `}
+              style={accentColor ? {
+                ...(selected ? { backgroundColor: accentColor, color: 'white', textDecoration: 'none' } : {}),
+                ...(isTodayDate && !selected ? { boxShadow: `inset 0 0 0 2px ${accentColor}` } : {}),
+              } : undefined}
             >
               {format(date, 'd')}
             </button>

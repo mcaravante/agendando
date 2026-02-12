@@ -16,9 +16,12 @@ interface BookingFormProps {
   onSubmit: (data: BookingFormData) => void;
   onBack: () => void;
   isLoading?: boolean;
+  accentColor?: string;
+  price?: number;
+  currency?: string;
 }
 
-export function BookingForm({ onSubmit, onBack, isLoading }: BookingFormProps) {
+export function BookingForm({ onSubmit, onBack, isLoading, accentColor, price, currency }: BookingFormProps) {
   const {
     register,
     handleSubmit,
@@ -58,8 +61,15 @@ export function BookingForm({ onSubmit, onBack, isLoading }: BookingFormProps) {
         <Button type="button" variant="outline" onClick={onBack}>
           Volver
         </Button>
-        <Button type="submit" className="flex-1" isLoading={isLoading}>
-          Confirmar Reserva
+        <Button
+          type="submit"
+          className="flex-1"
+          isLoading={isLoading}
+          style={accentColor ? { backgroundColor: accentColor } : undefined}
+        >
+          {price && price > 0
+            ? `Pagar $${price.toLocaleString()} ${currency || 'ARS'} y Reservar`
+            : 'Confirmar Reserva'}
         </Button>
       </div>
     </form>

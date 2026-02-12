@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { AuthenticatedRequest } from '../types';
 import * as integrationService from '../services/integrations';
+import * as mpService from '../services/mercadopago.service';
 import { IntegrationProvider } from '@prisma/client';
 
 const router = Router();
@@ -98,6 +99,43 @@ router.delete('/zoom', authMiddleware, async (req: AuthenticatedRequest, res: Re
   }
 });
 
+// MercadoPago OAuth
+router.get('/mercadopago/auth', authMiddleware, async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    const url = mpService.getMpAuthUrl(req.user!.id);
+    res.json({ url });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/mercadopago/callback', authMiddleware, async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    const { code } = req.body;
+
+    if (!code) {
+      return res.status(400).json({ error: 'Missing authorization code' });
+    }
+
+    const integration = await mpService.exchangeCodeForToken(code as string, req.user!.id);
+    res.json({
+      message: 'MercadoPago connected',
+      accountEmail: integration.accountEmail,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete('/mercadopago', authMiddleware, async (req: AuthenticatedRequest, res: Response, next) => {
+  try {
+    await mpService.disconnectMercadoPago(req.user!.id);
+    res.json({ message: 'MercadoPago disconnected' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Generic disconnect by provider
 router.delete('/:provider', authMiddleware, async (req: AuthenticatedRequest, res: Response, next) => {
   try {
@@ -107,6 +145,8 @@ router.delete('/:provider', authMiddleware, async (req: AuthenticatedRequest, re
       await integrationService.disconnectGoogle(req.user!.id);
     } else if (provider === IntegrationProvider.ZOOM) {
       await integrationService.disconnectZoom(req.user!.id);
+    } else if (provider === IntegrationProvider.MERCADOPAGO) {
+      await mpService.disconnectMercadoPago(req.user!.id);
     } else {
       return res.status(400).json({ error: 'Invalid provider' });
     }
