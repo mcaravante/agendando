@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
-import { Check, Copy, Code, MessageSquare, ExternalLink } from 'lucide-react';
+import { Check, Copy, Code, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface EmbedModalProps {

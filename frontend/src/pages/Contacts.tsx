@@ -42,7 +42,6 @@ function formatDate(dateString: string | null, language: string): string {
 }
 
 const SORTABLE_COLUMNS: ColumnKey[] = ['name', 'email', 'lastMeetingDate', 'nextMeetingDate'];
-const COPYABLE_COLUMNS: ColumnKey[] = ['name', 'email', 'phoneNumber'];
 
 function CopyableCell({ value, children }: { value: string; children: React.ReactNode }) {
   const [copied, setCopied] = useState(false);
