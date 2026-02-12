@@ -18,8 +18,18 @@ export interface LoginInput {
   password: string;
 }
 
+const ALLOWED_EMAILS = [
+  'matias.caravante@gmail.com',
+  'micaela.hock@gmail.com',
+];
+
 export async function registerUser(input: RegisterInput) {
   const { email, username, password, name } = input;
+
+  // Restrict registration to allowed emails
+  if (!ALLOWED_EMAILS.includes(email.toLowerCase())) {
+    throw new AppError('Registration is currently restricted', 403);
+  }
 
   // Check if email already exists
   const existingEmail = await prisma.user.findUnique({ where: { email } });
