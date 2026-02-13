@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
 type Theme = 'light' | 'dark';
 
@@ -32,10 +32,6 @@ function getInitialTheme(): Theme {
     return saved;
   }
 
-  if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    applyThemeToDOM('dark');
-    return 'dark';
-  }
   applyThemeToDOM('light');
   return 'light';
 }
@@ -54,20 +50,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
   }, [theme, setTheme]);
-
-  // Listen for system preference changes
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      const saved = localStorage.getItem('theme');
-      if (!saved) {
-        setTheme(e.matches ? 'dark' : 'light');
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [setTheme]);
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
