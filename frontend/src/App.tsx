@@ -24,6 +24,10 @@ import { WorkflowEditor } from './pages/WorkflowEditor';
 import { Contacts } from './pages/Contacts';
 import { Analytics } from './pages/Analytics';
 import { PaymentResult } from './pages/PaymentResult';
+import { Privacy } from './pages/Privacy';
+import { Terms } from './pages/Terms';
+import { Support } from './pages/Support';
+import { Documentation } from './pages/Documentation';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -48,6 +52,10 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/cancel/:token" element={<CancelBooking />} />
       <Route path="/booking/payment-result" element={<PaymentResult />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/support" element={<Support />} />
+      <Route path="/docs" element={<Documentation />} />
 
       {/* Protected routes with DashboardLayout */}
       <Route
