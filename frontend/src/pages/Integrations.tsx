@@ -74,14 +74,35 @@ export function Integrations() {
   const [isDisconnecting, setIsDisconnecting] = useState(false);
 
   useEffect(() => {
-    fetchIntegrations();
-
-    // Handle callback messages
     const success = searchParams.get('success');
     const error = searchParams.get('error');
-
-    // Handle MercadoPago OAuth callback
     const mpCode = searchParams.get('code');
+
+    // If opened as OAuth popup, handle callback and close
+    if (window.opener && (success || error || mpCode)) {
+      const handleAsPopup = async () => {
+        if (mpCode) {
+          try {
+            await api.post('/integrations/mercadopago/callback', { code: mpCode });
+            window.opener.postMessage({ type: 'oauth-success', provider: 'mercadopago' }, window.location.origin);
+          } catch {
+            window.opener.postMessage({ type: 'oauth-error', error: 'mercadopago_failed' }, window.location.origin);
+          }
+        } else if (success) {
+          window.opener.postMessage({ type: 'oauth-success', provider: success }, window.location.origin);
+        } else if (error) {
+          window.opener.postMessage({ type: 'oauth-error', error }, window.location.origin);
+        }
+        window.close();
+      };
+      handleAsPopup();
+      return;
+    }
+
+    // Normal page load
+    fetchIntegrations();
+
+    // Handle MercadoPago OAuth callback (direct navigation, not popup)
     if (mpCode) {
       handleMpCallback(mpCode);
     }
@@ -97,6 +118,25 @@ export function Integrations() {
       window.history.replaceState({}, '', '/integrations');
     }
   }, [searchParams, language]);
+
+  // Listen for OAuth popup completion
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type === 'oauth-success') {
+        const providerName = event.data.provider === 'google' ? 'Google Calendar' : event.data.provider === 'mercadopago' ? 'MercadoPago' : 'Zoom';
+        toast.success(`${providerName} ${t('integrations.connectedSuccess')}`);
+        setConnecting(null);
+        fetchIntegrations();
+      } else if (event.data?.type === 'oauth-error') {
+        toast.error(`${t('integrations.connectError')}: ${event.data.error || ''}`);
+        setConnecting(null);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [t]);
 
   const fetchIntegrations = async () => {
     try {
@@ -132,7 +172,15 @@ export function Integrations() {
         endpoint = '/integrations/mercadopago/auth';
       }
       const response = await api.get(endpoint);
-      window.location.href = response.data.url;
+      const popup = window.open(response.data.url, 'oauth-popup', 'width=600,height=700');
+
+      // Fallback: if popup was blocked or closed without completing, reset state
+      const timer = setInterval(() => {
+        if (!popup || popup.closed) {
+          clearInterval(timer);
+          setConnecting(null);
+        }
+      }, 500);
     } catch (error: any) {
       toast.error(error.response?.data?.error || t('integrations.connectError'));
       setConnecting(null);
