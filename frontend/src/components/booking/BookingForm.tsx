@@ -3,14 +3,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
+import { useLanguage } from '../../contexts/LanguageContext';
 
-const bookingSchema = z.object({
-  guestName: z.string().min(1, 'El nombre es requerido'),
-  guestEmail: z.string().email('Email inválido'),
-  notes: z.string().optional(),
-});
-
-type BookingFormData = z.infer<typeof bookingSchema>;
+type BookingFormData = {
+  guestName: string;
+  guestEmail: string;
+  notes?: string;
+};
 
 interface BookingFormProps {
   onSubmit: (data: BookingFormData) => void;
@@ -22,6 +21,14 @@ interface BookingFormProps {
 }
 
 export function BookingForm({ onSubmit, onBack, isLoading, accentColor, price, currency }: BookingFormProps) {
+  const { t } = useLanguage();
+
+  const bookingSchema = z.object({
+    guestName: z.string().min(1, t('booking.nameRequired')),
+    guestEmail: z.string().email(t('booking.invalidEmail')),
+    notes: z.string().optional(),
+  });
+
   const {
     register,
     handleSubmit,
@@ -33,14 +40,14 @@ export function BookingForm({ onSubmit, onBack, isLoading, accentColor, price, c
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <Input
-        label="Tu nombre"
+        label={t('booking.yourName')}
         type="text"
         placeholder="Juan Pérez"
         error={errors.guestName?.message}
         {...register('guestName')}
       />
       <Input
-        label="Tu email"
+        label={t('booking.yourEmail')}
         type="email"
         placeholder="tu@email.com"
         error={errors.guestEmail?.message}
@@ -48,18 +55,18 @@ export function BookingForm({ onSubmit, onBack, isLoading, accentColor, price, c
       />
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Notas adicionales (opcional)
+          {t('booking.notes')}
         </label>
         <textarea
           className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           rows={3}
-          placeholder="¿Algo que debamos saber antes de la reunión?"
+          placeholder={t('booking.notesPlaceholder')}
           {...register('notes')}
         />
       </div>
       <div className="flex gap-3">
         <Button type="button" variant="outline" onClick={onBack}>
-          Volver
+          {t('common.back')}
         </Button>
         <Button
           type="submit"
@@ -68,8 +75,8 @@ export function BookingForm({ onSubmit, onBack, isLoading, accentColor, price, c
           style={accentColor ? { backgroundColor: accentColor } : undefined}
         >
           {price && price > 0
-            ? `Pagar $${price.toLocaleString()} ${currency || 'ARS'} y Reservar`
-            : 'Confirmar Reserva'}
+            ? `${t('booking.payAndBook')} $${price.toLocaleString()} ${currency || 'ARS'}`
+            : t('booking.confirmBooking')}
         </Button>
       </div>
     </form>

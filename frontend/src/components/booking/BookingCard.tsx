@@ -1,6 +1,7 @@
 import { Calendar, Clock, User, Mail, MapPin, X } from 'lucide-react';
 import { Booking } from '../../types';
 import { formatDateInTimezone, formatTime } from '../../utils/date';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Button } from '../common/Button';
 
 interface BookingCardProps {
@@ -16,6 +17,7 @@ export function BookingCard({
   onCancel,
   showCancelButton = true,
 }: BookingCardProps) {
+  const { t } = useLanguage();
   const isCancelled = booking.status === 'CANCELLED';
   const isPast = new Date(booking.endTime) < new Date();
 
@@ -36,7 +38,7 @@ export function BookingCard({
               {booking.eventType?.title}
               {isCancelled && (
                 <span className="ml-2 text-xs text-red-600 dark:text-red-400 font-normal">
-                  (Cancelada)
+                  {t('bookings.cancelledLabel')}
                 </span>
               )}
             </h3>
@@ -63,13 +65,13 @@ export function BookingCard({
               {booking.eventType?.location && (
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
-                  <span>{{ meet: 'Google Meet', zoom: 'Zoom', phone: 'Teléfono', 'in-person': 'En persona' }[booking.eventType.location!] || booking.eventType.location}</span>
+                  <span>{{ meet: t('location.meet'), zoom: t('location.zoom'), phone: t('location.phone'), 'in-person': t('location.inPerson') }[booking.eventType.location!] || booking.eventType.location}</span>
                 </div>
               )}
             </div>
             {booking.notes && (
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                <span className="font-medium">Notas:</span> {booking.notes}
+                <span className="font-medium">{t('bookings.notesLabel')}</span> {booking.notes}
               </p>
             )}
           </div>

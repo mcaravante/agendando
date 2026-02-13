@@ -13,24 +13,9 @@ import { Availability as AvailabilityType, SchedulingConfig, DateOverride } from
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 
-const DAYS_ES = [
-  { value: 0, label: 'Domingo' },
-  { value: 1, label: 'Lunes' },
-  { value: 2, label: 'Martes' },
-  { value: 3, label: 'Miercoles' },
-  { value: 4, label: 'Jueves' },
-  { value: 5, label: 'Viernes' },
-  { value: 6, label: 'Sabado' },
-];
-
-const DAYS_EN = [
-  { value: 0, label: 'Sunday' },
-  { value: 1, label: 'Monday' },
-  { value: 2, label: 'Tuesday' },
-  { value: 3, label: 'Wednesday' },
-  { value: 4, label: 'Thursday' },
-  { value: 5, label: 'Friday' },
-  { value: 6, label: 'Saturday' },
+const DAY_KEYS = [
+  'days.sunday', 'days.monday', 'days.tuesday', 'days.wednesday',
+  'days.thursday', 'days.friday', 'days.saturday',
 ];
 
 const TIME_OPTIONS = Array.from({ length: 96 }, (_, i) => {
@@ -46,8 +31,8 @@ interface AvailabilitySlot {
 }
 
 export function Availability() {
-  const { t, language } = useLanguage();
-  const DAYS = language === 'es' ? DAYS_ES : DAYS_EN;
+  const { t } = useLanguage();
+  const DAYS = DAY_KEYS.map((key, i) => ({ value: i, label: t(key) }));
 
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [config, setConfig] = useState<SchedulingConfig | null>(null);
@@ -81,7 +66,7 @@ export function Availability() {
       setConfig(configRes.data);
       setOverrides(overridesRes.data);
     } catch (error) {
-      toast.error(language === 'es' ? 'Error al cargar disponibilidad' : 'Error loading availability');
+      toast.error(t('availability.loadError'));
     } finally {
       setIsLoading(false);
     }
@@ -91,9 +76,9 @@ export function Availability() {
     setIsSaving(true);
     try {
       await api.put('/availability', { slots });
-      toast.success(language === 'es' ? 'Disponibilidad guardada' : 'Availability saved');
+      toast.success(t('availability.saved'));
     } catch (error) {
-      toast.error(language === 'es' ? 'Error al guardar' : 'Error saving');
+      toast.error(t('toast.saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -108,9 +93,9 @@ export function Availability() {
         minNotice: config.minNotice,
         maxDaysInAdvance: config.maxDaysInAdvance,
       });
-      toast.success(language === 'es' ? 'Configuracion guardada' : 'Configuration saved');
+      toast.success(t('availability.configSaved'));
     } catch (error) {
-      toast.error(language === 'es' ? 'Error al guardar' : 'Error saving');
+      toast.error(t('toast.saveError'));
     }
   };
 
@@ -174,7 +159,7 @@ export function Availability() {
       const res = await api.get('/availability/overrides');
       setOverrides(res.data);
     } catch (error) {
-      toast.error(language === 'es' ? 'Error al guardar' : 'Error saving');
+      toast.error(t('toast.saveError'));
     }
   };
 
@@ -186,7 +171,7 @@ export function Availability() {
       const res = await api.get('/availability/overrides');
       setOverrides(res.data);
     } catch (error) {
-      toast.error(language === 'es' ? 'Error al eliminar' : 'Error deleting');
+      toast.error(t('toast.deleteError'));
     }
   };
 
@@ -207,7 +192,7 @@ export function Availability() {
                   ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }`}
-              title={language === 'es' ? 'Vista lista' : 'List view'}
+              title={t('availability.listView')}
             >
               <List className="w-4 h-4" />
             </button>
@@ -218,14 +203,14 @@ export function Availability() {
                   ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }`}
-              title={language === 'es' ? 'Vista calendario' : 'Calendar view'}
+              title={t('availability.calendarView')}
             >
               <CalendarDays className="w-4 h-4" />
             </button>
           </div>
           {viewMode === 'list' && (
             <Button onClick={handleSave} isLoading={isSaving}>
-              {language === 'es' ? 'Guardar Cambios' : 'Save Changes'}
+              {t('availability.saveChanges')}
             </Button>
           )}
         </div>
@@ -234,7 +219,7 @@ export function Availability() {
       {viewMode === 'list' ? (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-            {language === 'es' ? 'Horarios Semanales' : 'Weekly Hours'}
+            {t('availability.weeklyHours')}
           </h2>
 
           <div className="space-y-4">
@@ -254,7 +239,7 @@ export function Availability() {
                     {!hasSlots ? (
                       <div className="flex items-center gap-3">
                         <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {language === 'es' ? 'No disponible' : 'Unavailable'}
+                          {t('availability.notAvailable')}
                         </span>
                         <button
                           type="button"
@@ -285,7 +270,7 @@ export function Availability() {
                                 type="button"
                                 onClick={() => removeSlot(slot.index)}
                                 className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                                title={language === 'es' ? 'Eliminar' : 'Remove'}
+                                title={t('availability.removeSlot')}
                               >
                                 <X className="w-4 h-4" />
                               </button>
@@ -296,7 +281,7 @@ export function Availability() {
                                     type="button"
                                     onClick={() => addSlot(day.value)}
                                     className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                                    title={language === 'es' ? 'Agregar horario' : 'Add time'}
+                                    title={t('availability.addSlot')}
                                   >
                                     <Plus className="w-4 h-4" />
                                   </button>
@@ -305,7 +290,7 @@ export function Availability() {
                                     type="button"
                                     onClick={() => openCopyModal(day)}
                                     className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                                    title={language === 'es' ? 'Copiar a otros dias' : 'Copy to other days'}
+                                    title={t('availability.copyToOtherDays')}
                                   >
                                     <Copy className="w-4 h-4" />
                                   </button>
@@ -325,7 +310,7 @@ export function Availability() {
           <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <Globe className="w-4 h-4" />
             <span>
-              {language === 'es' ? 'Zona horaria:' : 'Timezone:'} {Intl.DateTimeFormat().resolvedOptions().timeZone}
+              {t('availability.timezone')}: {Intl.DateTimeFormat().resolvedOptions().timeZone}
             </span>
           </div>
         </div>
@@ -342,14 +327,14 @@ export function Availability() {
       {config && (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            {language === 'es' ? 'Configuracion Adicional' : 'Additional Settings'}
+            {t('availability.config')}
           </h2>
 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {language === 'es' ? 'Buffer antes (minutos)' : 'Buffer before (minutes)'}
+                  {t('availability.bufferBefore')}
                 </label>
                 <input
                   type="number"
@@ -362,13 +347,13 @@ export function Availability() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {language === 'es' ? 'Tiempo libre antes de cada reunion' : 'Free time before each meeting'}
+                  {t('availability.bufferBeforeDesc')}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {language === 'es' ? 'Buffer despues (minutos)' : 'Buffer after (minutes)'}
+                  {t('availability.bufferAfter')}
                 </label>
                 <input
                   type="number"
@@ -381,7 +366,7 @@ export function Availability() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {language === 'es' ? 'Tiempo libre despues de cada reunion' : 'Free time after each meeting'}
+                  {t('availability.bufferAfterDesc')}
                 </p>
               </div>
             </div>
@@ -389,7 +374,7 @@ export function Availability() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {language === 'es' ? 'Anticipacion minima (minutos)' : 'Minimum notice (minutes)'}
+                  {t('availability.minNotice')}
                 </label>
                 <input
                   type="number"
@@ -401,13 +386,13 @@ export function Availability() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {language === 'es' ? 'No permitir reservas con menos de este tiempo' : "Don't allow bookings with less than this time"}
+                  {t('availability.minNoticeDesc')}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {language === 'es' ? 'Dias maximo en adelanto' : 'Maximum days in advance'}
+                  {t('availability.maxDays')}
                 </label>
                 <input
                   type="number"
@@ -423,13 +408,13 @@ export function Availability() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {language === 'es' ? 'Hasta cuantos dias en el futuro pueden reservar' : 'How many days in the future can people book'}
+                  {t('availability.maxDaysDesc')}
                 </p>
               </div>
             </div>
 
             <Button onClick={handleConfigSave} variant="secondary">
-              {language === 'es' ? 'Guardar Configuracion' : 'Save Configuration'}
+              {t('availability.saveConfig')}
             </Button>
           </div>
         </div>

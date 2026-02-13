@@ -23,7 +23,7 @@ interface DashboardStats {
 
 export function Dashboard() {
   const { user } = useAuth();
-  const { language } = useLanguage();
+  const { t } = useLanguage();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,10 +59,10 @@ export function Dashboard() {
     setIsCancelling(true);
     try {
       await api.patch(`/bookings/${cancellingId}/cancel`);
-      toast.success(language === 'es' ? 'Reunión cancelada' : 'Meeting cancelled');
+      toast.success(t('dashboard.meetingCancelled'));
       loadData();
     } catch (error) {
-      toast.error(language === 'es' ? 'Error al cancelar' : 'Failed to cancel meeting');
+      toast.error(t('dashboard.cancelError'));
     } finally {
       setIsCancelling(false);
       setCancellingId(null);
@@ -71,7 +71,7 @@ export function Dashboard() {
 
   const copyPublicLink = () => {
     navigator.clipboard.writeText(`${window.location.origin}/${user?.username}`);
-    toast.success('Link copied to clipboard!');
+    toast.success(t('common.linkCopied'));
   };
 
   if (isLoading) {
@@ -88,22 +88,22 @@ export function Dashboard() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Welcome back, {user?.name?.split(' ')[0]}!
+            {t('dashboard.welcomeBack')} {user?.name?.split(' ')[0]}!
           </h1>
           <p className="mt-1 text-gray-600 dark:text-gray-400">
-            Here's what's happening with your bookings.
+            {t('dashboard.subtitle')}
           </p>
         </div>
         <Button onClick={() => setIsCreateModalOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
-          Crear Evento
+          {t('dashboard.createEvent')}
         </Button>
       </div>
 
       {/* Stats cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
-          label="Upcoming"
+          label={t('bookings.upcoming')}
           value={stats?.upcoming || 0}
           icon={
             <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,7 +113,7 @@ export function Dashboard() {
           color="blue"
         />
         <StatCard
-          label="This Month"
+          label={t('dashboard.thisMonth')}
           value={stats?.thisMonth || 0}
           icon={
             <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,7 +123,7 @@ export function Dashboard() {
           color="green"
         />
         <StatCard
-          label="Cancelled"
+          label={t('dashboard.cancelled')}
           value={stats?.cancelled || 0}
           icon={
             <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,7 +133,7 @@ export function Dashboard() {
           color="red"
         />
         <StatCard
-          label="Total"
+          label={t('dashboard.total')}
           value={stats?.total || 0}
           icon={
             <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,12 +148,12 @@ export function Dashboard() {
         {/* Upcoming bookings */}
         <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Upcoming Meetings</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('dashboard.upcomingMeetings')}</h2>
             <Link
               to="/bookings"
               className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
             >
-              View all
+              {t('dashboard.viewAll')}
             </Link>
           </div>
 
@@ -162,7 +162,7 @@ export function Dashboard() {
               bookings={bookings.slice(0, 5)}
               timezone={user?.timezone || 'America/Argentina/Buenos_Aires'}
               onCancel={handleCancel}
-              emptyMessage="No upcoming meetings"
+              emptyMessage={t('dashboard.noUpcomingMeetings')}
             />
           ) : (
             <div className="text-center py-8">
@@ -171,9 +171,9 @@ export function Dashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <p className="text-gray-600 dark:text-gray-400">No upcoming meetings</p>
+              <p className="text-gray-600 dark:text-gray-400">{t('dashboard.noUpcomingMeetings')}</p>
               <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
-                Share your booking link to start receiving bookings
+                {t('dashboard.shareBookingTip')}
               </p>
             </div>
           )}
@@ -183,9 +183,9 @@ export function Dashboard() {
         <div className="space-y-6">
           {/* Share link card */}
           <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-6 text-white">
-            <h3 className="font-semibold mb-2">Share your booking link</h3>
+            <h3 className="font-semibold mb-2">{t('dashboard.shareLink')}</h3>
             <p className="text-sm text-blue-100 mb-4">
-              Share this link with people to let them book time with you.
+              {t('dashboard.shareDescription')}
             </p>
             <div className="bg-white/10 rounded-lg p-3 mb-4">
               <p className="text-sm truncate">
@@ -197,7 +197,7 @@ export function Dashboard() {
                 onClick={copyPublicLink}
                 className="flex-1 px-4 py-2 bg-white text-blue-600 rounded-lg font-medium text-sm hover:bg-blue-50 transition-colors"
               >
-                Copy Link
+                {t('common.copyLink')}
               </button>
               <a
                 href={`/${user?.username}`}
@@ -205,14 +205,14 @@ export function Dashboard() {
                 rel="noopener noreferrer"
                 className="px-4 py-2 bg-blue-500 rounded-lg text-sm hover:bg-blue-400 transition-colors"
               >
-                Preview
+                {t('dashboard.preview')}
               </a>
             </div>
           </div>
 
           {/* Quick links */}
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">{t('dashboard.quickActions')}</h3>
             <div className="space-y-2">
               <QuickActionLink
                 to="/event-types"
@@ -221,7 +221,7 @@ export function Dashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
                 }
-                label="Create Event Type"
+                label={t('dashboard.createEventType')}
               />
               <QuickActionLink
                 to="/availability"
@@ -230,7 +230,7 @@ export function Dashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 }
-                label="Set Availability"
+                label={t('dashboard.setAvailability')}
               />
               <QuickActionLink
                 to="/integrations"
@@ -239,7 +239,7 @@ export function Dashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" />
                   </svg>
                 }
-                label="Connect Calendar"
+                label={t('dashboard.connectCalendar')}
               />
               <QuickActionLink
                 to="/workflows"
@@ -248,7 +248,7 @@ export function Dashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                 }
-                label="Create Workflow"
+                label={t('dashboard.createWorkflow')}
               />
             </div>
           </div>
@@ -257,14 +257,14 @@ export function Dashboard() {
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Active Event Types</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('dashboard.activeEventTypes')}</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.activeEventTypes || 0}</p>
               </div>
               <Link
                 to="/event-types"
                 className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
               >
-                Manage
+                {t('dashboard.manage')}
               </Link>
             </div>
           </div>
@@ -284,12 +284,10 @@ export function Dashboard() {
         isOpen={!!cancellingId}
         onClose={() => setCancellingId(null)}
         onConfirm={confirmCancel}
-        title={language === 'es' ? 'Cancelar reunión' : 'Cancel meeting'}
-        message={language === 'es'
-          ? '¿Estás seguro de cancelar esta reunión?'
-          : 'Are you sure you want to cancel this meeting?'}
-        confirmLabel={language === 'es' ? 'Cancelar reunión' : 'Cancel meeting'}
-        cancelLabel={language === 'es' ? 'Volver' : 'Go back'}
+        title={t('dashboard.cancelMeeting')}
+        message={t('dashboard.cancelConfirm')}
+        confirmLabel={t('dashboard.cancelMeeting')}
+        cancelLabel={t('common.back')}
         isLoading={isCancelling}
       />
     </div>

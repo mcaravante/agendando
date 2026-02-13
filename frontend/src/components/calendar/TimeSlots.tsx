@@ -1,5 +1,6 @@
 import { AvailableSlot } from '../../types';
 import { Loading } from '../common/Loading';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface TimeSlotsProps {
   slots: AvailableSlot[];
@@ -18,14 +19,16 @@ export function TimeSlots({
   timezone,
   accentColor,
 }: TimeSlotsProps) {
+  const { t } = useLanguage();
+
   if (isLoading) {
-    return <Loading text="Cargando horarios..." />;
+    return <Loading text={t('booking.loadingSlots')} />;
   }
 
   if (slots.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
-        No hay horarios disponibles para esta fecha
+        {t('booking.noSlots')}
       </div>
     );
   }
@@ -33,7 +36,7 @@ export function TimeSlots({
   return (
     <div className="space-y-2">
       <p className="text-sm text-gray-600 mb-4">
-        Horarios en tu zona: {timezone}
+        {t('booking.timesInTimezone')} {timezone}
       </p>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-80 overflow-y-auto">
         {slots.map((slot) => {

@@ -18,7 +18,7 @@ export function CopyScheduleModal({
   days,
   onCopy,
 }: CopyScheduleModalProps) {
-  const { language } = useLanguage();
+  const { t } = useLanguage();
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
 
   const toggleDay = (dayValue: number) => {
@@ -48,14 +48,14 @@ export function CopyScheduleModal({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title={language === 'es' ? 'Copiar horarios' : 'Copy schedule'}
+      title={t('availability.copySchedule')}
       size="sm"
     >
       <div className="space-y-4">
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          {language === 'es' ? 'Copiar horarios de' : 'Copy schedule from'}{' '}
+          {t('availability.copyTo')}{' '}
           <span className="font-medium text-gray-900 dark:text-white">{sourceDay.label}</span>{' '}
-          {language === 'es' ? 'a:' : 'to:'}
+          {t('availability.to')}:
         </p>
 
         <div className="space-y-2">
@@ -77,14 +77,14 @@ export function CopyScheduleModal({
 
         <div className="flex gap-3 pt-2">
           <Button variant="secondary" onClick={handleClose} className="flex-1">
-            {language === 'es' ? 'Cancelar' : 'Cancel'}
+            {t('common.cancel')}
           </Button>
           <Button
             onClick={handleApply}
             disabled={selectedDays.length === 0}
             className="flex-1"
           >
-            {language === 'es' ? 'Aplicar' : 'Apply'}
+            {t('common.apply')}
           </Button>
         </div>
       </div>

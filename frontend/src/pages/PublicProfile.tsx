@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { PageLoading } from '../components/common/Loading';
+import { useLanguage } from '../contexts/LanguageContext';
 import api from '../utils/api';
 import { PublicProfile as PublicProfileType } from '../types';
 
@@ -8,6 +9,7 @@ const DEFAULT_BRAND_COLOR = '#3b82f6';
 
 export function PublicProfile() {
   const { username } = useParams<{ username: string }>();
+  const { t } = useLanguage();
   const [profile, setProfile] = useState<PublicProfileType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,9 +25,9 @@ export function PublicProfile() {
       setProfile(res.data);
     } catch (error: any) {
       if (error.response?.status === 404) {
-        setError('User not found');
+        setError(t('public.userNotFound'));
       } else {
-        setError('Error loading profile');
+        setError(t('public.errorLoading'));
       }
     } finally {
       setIsLoading(false);
@@ -46,16 +48,16 @@ export function PublicProfile() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            {error || 'User not found'}
+            {error || t('public.userNotFound')}
           </h1>
           <p className="text-gray-500 mb-6">
-            The page you're looking for doesn't exist or is unavailable.
+            {t('public.pageNotFound')}
           </p>
           <Link
             to="/"
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Go to homepage
+            {t('public.goHome')}
           </Link>
         </div>
       </div>
@@ -107,12 +109,12 @@ export function PublicProfile() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-            <p className="text-gray-600">No events available at the moment.</p>
+            <p className="text-gray-600">{t('public.noEvents')}</p>
           </div>
         ) : (
           <div className="space-y-4">
             <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider text-center mb-6">
-              Select an event to schedule
+              {t('public.selectEvent')}
             </h2>
             {profile.eventTypes.map((eventType) => (
               <Link
@@ -157,10 +159,10 @@ export function PublicProfile() {
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                             </svg>
-                            {eventType.location === 'zoom' && 'Zoom'}
-                            {eventType.location === 'meet' && 'Google Meet'}
-                            {eventType.location === 'phone' && 'Phone call'}
-                            {eventType.location === 'in-person' && 'In person'}
+                            {eventType.location === 'zoom' && t('location.zoom')}
+                            {eventType.location === 'meet' && t('location.meet')}
+                            {eventType.location === 'phone' && t('location.phone')}
+                            {eventType.location === 'in-person' && t('location.inPerson')}
                             {!['zoom', 'meet', 'phone', 'in-person'].includes(eventType.location || '') && eventType.location}
                           </div>
                         )}
@@ -192,7 +194,7 @@ export function PublicProfile() {
         {/* Footer */}
         <div className="mt-12 text-center">
           <p className="text-sm text-gray-400">
-            Powered by{' '}
+            {t('public.poweredBy')}{' '}
             <Link to="/" className="font-medium" style={{ color: brandColor }}>
               Agendando
             </Link>

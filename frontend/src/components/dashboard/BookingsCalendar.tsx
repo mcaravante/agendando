@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, ChevronDown, Calendar, Clock, User, Mail, MapPin, X } from 'lucide-react';
 import { addWeeks, subWeeks, startOfWeek, addDays, addMonths, subMonths, format, isSameDay, isSameMonth, isToday } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 import { Booking, Availability } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getCalendarWeeks } from '../../utils/date';
@@ -28,11 +28,11 @@ const END_HOUR = 24;
 const ALL_HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
 const LABEL_HOURS = ALL_HOURS.filter(h => h > 0);
 
-const LOCATION_LABELS: Record<string, string> = {
-  meet: 'Google Meet',
-  zoom: 'Zoom',
-  phone: 'Teléfono',
-  'in-person': 'En persona',
+const LOCATION_LABEL_KEYS: Record<string, string> = {
+  meet: 'location.meet',
+  zoom: 'location.zoom',
+  phone: 'location.phone',
+  'in-person': 'location.inPerson',
 };
 
 function getTimeInHours(dateStr: string, timezone: string): number {
@@ -51,7 +51,8 @@ function timeToHour(t: string): number {
 }
 
 export function BookingsCalendar({ bookings, timezone, onCancel }: BookingsCalendarProps) {
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
+  const dateFnsLocale = language === 'es' ? es : enUS;
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 0 }));
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -107,13 +108,9 @@ export function BookingsCalendar({ bookings, timezone, onCancel }: BookingsCalen
     [weekStart]
   );
 
-  const dayHeaders = language === 'es'
-    ? ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB']
-    : ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const dayHeaders = [t('days.sun'), t('days.mon'), t('days.tue'), t('days.wed'), t('days.thu'), t('days.fri'), t('days.sat')];
 
-  const miniDayHeaders = language === 'es'
-    ? ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa']
-    : ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  const miniDayHeaders = [t('days.sunMini'), t('days.monMini'), t('days.tueMini'), t('days.wedMini'), t('days.thuMini'), t('days.friMini'), t('days.satMini')];
 
   const bookingsByDay = useMemo(() => {
     const map = new Map<string, Booking[]>();
@@ -167,11 +164,10 @@ export function BookingsCalendar({ bookings, timezone, onCancel }: BookingsCalen
   const monthLabel = useMemo(() => {
     const first = weekDays[0];
     const last = weekDays[6];
-    const locale = language === 'es' ? es : undefined;
     if (first.getMonth() === last.getMonth()) {
-      return format(first, 'MMM yyyy', { locale });
+      return format(first, 'MMM yyyy', { locale: dateFnsLocale });
     }
-    return `${format(first, 'MMM', { locale })} - ${format(last, 'MMM yyyy', { locale })}`;
+    return `${format(first, 'MMM', { locale: dateFnsLocale })} - ${format(last, 'MMM yyyy', { locale: dateFnsLocale })}`;
   }, [weekDays, language]);
 
   const goToToday = () => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }));
@@ -217,7 +213,7 @@ export function BookingsCalendar({ bookings, timezone, onCancel }: BookingsCalen
             <div className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-[280px]">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-semibold capitalize text-gray-900 dark:text-white">
-                  {format(pickerMonth, 'MMMM yyyy', { locale: language === 'es' ? es : undefined })}
+                  {format(pickerMonth, 'MMMM yyyy', { locale: dateFnsLocale })}
                 </span>
                 <div className="flex gap-1">
                   <button onClick={() => setPickerMonth(subMonths(pickerMonth, 1))} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
@@ -259,7 +255,7 @@ export function BookingsCalendar({ bookings, timezone, onCancel }: BookingsCalen
           onClick={goToToday}
           className="ml-2 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
         >
-          {language === 'es' ? 'Hoy' : 'Today'}
+          {t('bookings.today')}
         </button>
       </div>
 
@@ -394,7 +390,7 @@ export function BookingsCalendar({ bookings, timezone, onCancel }: BookingsCalen
                     </h2>
                     {selectedBooking.status === 'CANCELLED' && (
                       <span className="text-xs text-red-600 dark:text-red-400">
-                        {language === 'es' ? 'Cancelada' : 'Cancelled'}
+                        {t('bookings.cancelledStatus')}
                       </span>
                     )}
                   </div>
@@ -409,7 +405,7 @@ export function BookingsCalendar({ bookings, timezone, onCancel }: BookingsCalen
               <div className="px-6 py-4 space-y-3 text-sm text-gray-600 dark:text-gray-400">
                 <div className="flex items-center gap-3">
                   <Calendar className="w-4 h-4 flex-shrink-0 text-gray-400" />
-                  <span>{formatInTimeZone(selectedBooking.startTime, timezone, "EEEE d 'de' MMMM, yyyy", { locale: es })}</span>
+                  <span>{formatInTimeZone(selectedBooking.startTime, timezone, language === 'es' ? "EEEE d 'de' MMMM, yyyy" : "EEEE, MMMM d, yyyy", { locale: dateFnsLocale })}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Clock className="w-4 h-4 flex-shrink-0 text-gray-400" />
@@ -431,13 +427,13 @@ export function BookingsCalendar({ bookings, timezone, onCancel }: BookingsCalen
                 {selectedBooking.eventType?.location && (
                   <div className="flex items-center gap-3">
                     <MapPin className="w-4 h-4 flex-shrink-0 text-gray-400" />
-                    <span>{LOCATION_LABELS[selectedBooking.eventType.location] || selectedBooking.eventType.location}</span>
+                    <span>{LOCATION_LABEL_KEYS[selectedBooking.eventType.location] ? t(LOCATION_LABEL_KEYS[selectedBooking.eventType.location]) : selectedBooking.eventType.location}</span>
                   </div>
                 )}
                 {selectedBooking.notes && (
                   <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
                     <p className="text-gray-500 dark:text-gray-400">
-                      <span className="font-medium">{language === 'es' ? 'Notas:' : 'Notes:'}</span> {selectedBooking.notes}
+                      <span className="font-medium">{t('bookings.notesLabel')}</span> {selectedBooking.notes}
                     </p>
                   </div>
                 )}
@@ -452,7 +448,7 @@ export function BookingsCalendar({ bookings, timezone, onCancel }: BookingsCalen
                       setSelectedBooking(null);
                     }}
                   >
-                    {language === 'es' ? 'Cancelar reunión' : 'Cancel meeting'}
+                    {t('dashboard.cancelMeeting')}
                   </Button>
                 </div>
               )}

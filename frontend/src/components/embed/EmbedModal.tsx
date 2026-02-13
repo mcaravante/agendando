@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { Check, Copy, Code, ExternalLink } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import toast from 'react-hot-toast';
 
 interface EmbedModalProps {
@@ -15,6 +16,7 @@ interface EmbedModalProps {
 type EmbedType = 'inline' | 'popup-widget' | 'popup-text';
 
 export function EmbedModal({ isOpen, onClose, eventUrl, eventTitle, userName }: EmbedModalProps) {
+  const { t } = useLanguage();
   const [selectedType, setSelectedType] = useState<EmbedType | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -24,8 +26,8 @@ export function EmbedModal({ isOpen, onClose, eventUrl, eventTitle, userName }: 
   const embedOptions: { type: EmbedType; title: string; description: string; icon: React.ReactNode }[] = [
     {
       type: 'inline',
-      title: 'Inline embed',
-      description: 'Agrega el calendario directamente en tu sitio',
+      title: t('embed.inline'),
+      description: t('embed.inlineDesc'),
       icon: (
         <div className="w-full h-24 border-2 border-gray-200 rounded-lg flex items-center justify-center bg-gray-50">
           <div className="grid grid-cols-3 gap-1">
@@ -38,8 +40,8 @@ export function EmbedModal({ isOpen, onClose, eventUrl, eventTitle, userName }: 
     },
     {
       type: 'popup-widget',
-      title: 'Popup widget',
-      description: 'Agrega un boton flotante que abre un popup',
+      title: t('embed.popupWidget'),
+      description: t('embed.popupWidgetDesc'),
       icon: (
         <div className="w-full h-24 border-2 border-gray-200 rounded-lg flex items-end justify-end p-2 bg-gray-50">
           <div className="w-12 h-6 bg-primary-500 rounded-full" />
@@ -48,8 +50,8 @@ export function EmbedModal({ isOpen, onClose, eventUrl, eventTitle, userName }: 
     },
     {
       type: 'popup-text',
-      title: 'Popup text',
-      description: 'Agrega un link de texto que abre un popup',
+      title: t('embed.popupText'),
+      description: t('embed.popupTextDesc'),
       icon: (
         <div className="w-full h-24 border-2 border-gray-200 rounded-lg flex items-start p-3 bg-gray-50">
           <div className="space-y-2">
@@ -72,7 +74,7 @@ export function EmbedModal({ isOpen, onClose, eventUrl, eventTitle, userName }: 
         return `<!-- Agendando Popup Widget -->
 <div
   data-agendando-badge="${eventUrl}"
-  data-agendando-text="Agendar ${eventTitle}"
+  data-agendando-text="${t('embed.scheduleEvent')} ${eventTitle}"
   data-agendando-color="#3b82f6"
 ></div>
 <script src="${widgetUrl}" async></script>`;
@@ -80,7 +82,7 @@ export function EmbedModal({ isOpen, onClose, eventUrl, eventTitle, userName }: 
       case 'popup-text':
         return `<!-- Agendando Popup Link -->
 <a href="#" data-agendando-popup="${eventUrl}">
-  Agendar una reunion
+  ${t('embed.scheduleAMeeting')}
 </a>
 <script src="${widgetUrl}" async></script>`;
 
@@ -93,7 +95,7 @@ export function EmbedModal({ isOpen, onClose, eventUrl, eventTitle, userName }: 
     const code = getEmbedCode();
     navigator.clipboard.writeText(code);
     setCopied(true);
-    toast.success('Codigo copiado al portapapeles');
+    toast.success(t('embed.codeCopied'));
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -107,13 +109,13 @@ export function EmbedModal({ isOpen, onClose, eventUrl, eventTitle, userName }: 
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Agregar a sitio web" size="lg">
+    <Modal isOpen={isOpen} onClose={handleClose} title={t('embed.title')} size="lg">
       {!selectedType ? (
         <div className="space-y-6">
           <p className="text-sm text-gray-500">{userName}</p>
 
           <div>
-            <p className="text-gray-700 mb-4">Como quieres agregar Agendando a tu sitio?</p>
+            <p className="text-gray-700 mb-4">{t('embed.howToAdd')}</p>
 
             <div className="grid grid-cols-3 gap-4">
               {embedOptions.map((option) => (
@@ -134,7 +136,7 @@ export function EmbedModal({ isOpen, onClose, eventUrl, eventTitle, userName }: 
 
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button variant="secondary" onClick={handleClose}>
-              Cancelar
+              {t('common.cancel')}
             </Button>
           </div>
         </div>
@@ -144,7 +146,7 @@ export function EmbedModal({ isOpen, onClose, eventUrl, eventTitle, userName }: 
             onClick={handleBack}
             className="text-sm text-primary-600 hover:text-primary-700 flex items-center gap-1"
           >
-            ← Volver a opciones
+            ← {t('embed.backToOptions')}
           </button>
 
           <div>
@@ -152,7 +154,7 @@ export function EmbedModal({ isOpen, onClose, eventUrl, eventTitle, userName }: 
               {embedOptions.find((o) => o.type === selectedType)?.title}
             </h3>
             <p className="text-sm text-gray-500 mb-4">
-              Copia este codigo y pegalo en el HTML de tu sitio web donde quieres que aparezca el widget.
+              {t('embed.copyInstructions')}
             </p>
 
             <div className="relative">
@@ -167,12 +169,12 @@ export function EmbedModal({ isOpen, onClose, eventUrl, eventTitle, userName }: 
                 {copied ? (
                   <>
                     <Check className="w-4 h-4 mr-1" />
-                    Copiado
+                    {t('common.copied')}
                   </>
                 ) : (
                   <>
                     <Copy className="w-4 h-4 mr-1" />
-                    Copiar
+                    {t('common.copy')}
                   </>
                 )}
               </Button>
@@ -182,10 +184,10 @@ export function EmbedModal({ isOpen, onClose, eventUrl, eventTitle, userName }: 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h4 className="font-medium text-blue-900 mb-2 flex items-center gap-2">
               <Code className="w-4 h-4" />
-              Uso avanzado (JavaScript)
+              {t('embed.advancedUsage')}
             </h4>
             <p className="text-sm text-blue-800 mb-2">
-              Tambien puedes controlar el widget programaticamente:
+              {t('embed.advancedDesc')}
             </p>
             <pre className="bg-blue-100 text-blue-900 p-3 rounded text-xs overflow-x-auto">
 {`// Abrir popup
@@ -211,12 +213,12 @@ document.addEventListener('agendando:booked', (e) => {
               rel="noopener noreferrer"
               className="text-sm text-primary-600 hover:text-primary-700 flex items-center gap-1"
             >
-              Ver pagina publica
+              {t('embed.viewPublicPage')}
               <ExternalLink className="w-4 h-4" />
             </a>
             <div className="flex gap-3">
               <Button variant="secondary" onClick={handleClose}>
-                Cerrar
+                {t('common.close')}
               </Button>
             </div>
           </div>

@@ -15,7 +15,7 @@ type Filter = 'upcoming' | 'past' | 'cancelled' | 'all';
 
 export function Bookings() {
   const { user } = useAuth();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('upcoming');
@@ -33,7 +33,7 @@ export function Bookings() {
       const res = await api.get('/bookings', { params: { filter } });
       setBookings(res.data);
     } catch (error) {
-      toast.error(language === 'es' ? 'Error al cargar las reuniones' : 'Error loading meetings');
+      toast.error(t('bookings.loadError'));
     } finally {
       setIsLoading(false);
     }
@@ -48,44 +48,30 @@ export function Bookings() {
     setIsCancelling(true);
     try {
       await api.patch(`/bookings/${cancelId}/cancel`);
-      toast.success(language === 'es' ? 'Reunión cancelada' : 'Meeting cancelled');
+      toast.success(t('bookings.meetingCancelled'));
       setCancelId(null);
       loadBookings();
     } catch (error) {
-      toast.error(language === 'es' ? 'Error al cancelar la reunión' : 'Error cancelling meeting');
+      toast.error(t('bookings.cancelError'));
     } finally {
       setIsCancelling(false);
     }
   };
 
   const filters: { value: Filter; label: string }[] = [
-    { value: 'upcoming', label: language === 'es' ? 'Próximas' : 'Upcoming' },
-    { value: 'past', label: language === 'es' ? 'Pasadas' : 'Past' },
-    { value: 'cancelled', label: language === 'es' ? 'Canceladas' : 'Cancelled' },
-    { value: 'all', label: language === 'es' ? 'Todas' : 'All' },
+    { value: 'upcoming', label: t('bookings.upcoming') },
+    { value: 'past', label: t('bookings.past') },
+    { value: 'cancelled', label: t('bookings.cancelled') },
+    { value: 'all', label: t('bookings.all') },
   ];
 
   const getEmptyMessage = () => {
-    if (language === 'es') {
-      return `No hay reuniones ${
-        filter === 'upcoming'
-          ? 'próximas'
-          : filter === 'past'
-          ? 'pasadas'
-          : filter === 'cancelled'
-          ? 'canceladas'
-          : ''
-      }`;
+    switch (filter) {
+      case 'upcoming': return t('bookings.noUpcoming');
+      case 'past': return t('bookings.noPast');
+      case 'cancelled': return t('bookings.noCancelled');
+      default: return t('bookings.noMeetings');
     }
-    return `No ${
-      filter === 'upcoming'
-        ? 'upcoming'
-        : filter === 'past'
-        ? 'past'
-        : filter === 'cancelled'
-        ? 'cancelled'
-        : ''
-    } meetings`;
   };
 
   return (
@@ -113,7 +99,7 @@ export function Bookings() {
                 ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
-            title={language === 'es' ? 'Vista lista' : 'List view'}
+            title={t('bookings.listView')}
           >
             <List className="w-4 h-4" />
           </button>
@@ -124,7 +110,7 @@ export function Bookings() {
                 ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
-            title={language === 'es' ? 'Vista calendario' : 'Calendar view'}
+            title={t('bookings.calendarView')}
           >
             <CalendarDays className="w-4 h-4" />
           </button>
@@ -153,20 +139,18 @@ export function Bookings() {
       <Modal
         isOpen={!!cancelId}
         onClose={() => setCancelId(null)}
-        title={language === 'es' ? 'Cancelar reunión' : 'Cancel meeting'}
+        title={t('bookings.cancelMeetingTitle')}
         size="sm"
       >
         <p className="text-gray-600 dark:text-gray-300 mb-6">
-          {language === 'es'
-            ? '¿Estás seguro de que deseas cancelar esta reunión?'
-            : 'Are you sure you want to cancel this meeting?'}
+          {t('bookings.confirmCancelMessage')}
         </p>
         <div className="flex gap-3 justify-end">
           <Button variant="outline" size="sm" onClick={() => setCancelId(null)}>
-            {language === 'es' ? 'No, volver' : 'No, go back'}
+            {t('bookings.cancelGoBack')}
           </Button>
           <Button variant="danger" size="sm" onClick={confirmCancel} isLoading={isCancelling}>
-            {language === 'es' ? 'Sí, cancelar' : 'Yes, cancel'}
+            {t('bookings.cancelConfirm')}
           </Button>
         </div>
       </Modal>

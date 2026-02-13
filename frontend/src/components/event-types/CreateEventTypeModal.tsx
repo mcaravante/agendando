@@ -5,25 +5,21 @@ import { z } from 'zod';
 import { Modal } from '../common/Modal';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
+import { useLanguage } from '../../contexts/LanguageContext';
 import api from '../../utils/api';
 import { EventType } from '../../types';
 import toast from 'react-hot-toast';
 
-const eventTypeSchema = z.object({
-  title: z.string().min(1, 'El título es requerido'),
-  slug: z
-    .string()
-    .min(1, 'El slug es requerido')
-    .regex(/^[a-z0-9-]+$/, 'Solo letras minúsculas, números y guiones'),
-  description: z.string().optional(),
-  duration: z.coerce.number().min(5, 'Mínimo 5 minutos').max(480, 'Máximo 8 horas'),
-  color: z.string(),
-  location: z.string().optional(),
-  price: z.coerce.number().min(0).nullable().optional(),
-  currency: z.string().optional(),
-});
-
-type EventTypeFormData = z.infer<typeof eventTypeSchema>;
+type EventTypeFormData = {
+  title: string;
+  slug: string;
+  description?: string;
+  duration: number;
+  color: string;
+  location?: string;
+  price?: number | null;
+  currency?: string;
+};
 
 const COLORS = [
   '#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6',
@@ -32,12 +28,12 @@ const COLORS = [
 
 const DURATIONS = [15, 30, 45, 60, 90, 120];
 
-const LOCATION_OPTIONS = [
-  { value: '', label: 'Sin ubicación' },
-  { value: 'meet', label: 'Google Meet' },
-  { value: 'zoom', label: 'Zoom' },
-  { value: 'phone', label: 'Teléfono' },
-  { value: 'in-person', label: 'En persona' },
+const LOCATION_KEYS = [
+  { value: '', labelKey: 'eventTypes.modal.noLocation' },
+  { value: 'meet', labelKey: 'location.meet' },
+  { value: 'zoom', labelKey: 'location.zoom' },
+  { value: 'phone', labelKey: 'location.phone' },
+  { value: 'in-person', labelKey: 'location.inPerson' },
 ];
 
 interface CreateEventTypeModalProps {
@@ -53,6 +49,27 @@ export function CreateEventTypeModal({
   onSuccess,
   editingEventType,
 }: CreateEventTypeModalProps) {
+  const { t } = useLanguage();
+
+  const eventTypeSchema = z.object({
+    title: z.string().min(1, t('eventTypes.modal.titleRequired')),
+    slug: z
+      .string()
+      .min(1, t('eventTypes.modal.slugRequired'))
+      .regex(/^[a-z0-9-]+$/, t('eventTypes.modal.slugFormat')),
+    description: z.string().optional(),
+    duration: z.coerce.number().min(5, t('eventTypes.modal.durationMin')).max(480, t('eventTypes.modal.durationMax')),
+    color: z.string(),
+    location: z.string().optional(),
+    price: z.coerce.number().min(0).nullable().optional(),
+    currency: z.string().optional(),
+  });
+
+  const LOCATION_OPTIONS = LOCATION_KEYS.map((loc) => ({
+    value: loc.value,
+    label: t(loc.labelKey),
+  }));
+
   const {
     register,
     handleSubmit,
@@ -117,15 +134,15 @@ export function CreateEventTypeModal({
       };
       if (editingEventType) {
         await api.patch(`/event-types/${editingEventType.id}`, submitData);
-        toast.success('Evento actualizado');
+        toast.success(t('eventTypes.modal.updated'));
       } else {
         await api.post('/event-types', submitData);
-        toast.success('Evento creado');
+        toast.success(t('eventTypes.modal.created'));
       }
       onClose();
       onSuccess?.();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Error al guardar');
+      toast.error(error.response?.data?.error || t('toast.saveError'));
     }
   };
 
@@ -133,13 +150,13 @@ export function CreateEventTypeModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={editingEventType ? 'Editar Evento' : 'Nuevo Evento'}
+      title={editingEventType ? t('eventTypes.editTitle') : t('eventTypes.new')}
       size="lg"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <Input
-          label="Título"
-          placeholder="Reunión de 30 minutos"
+          label={t('eventTypes.modal.titleLabel')}
+          placeholder={t('eventTypes.modal.titlePlaceholder')}
           error={errors.title?.message}
           {...register('title', {
             onChange: (e) => {
@@ -151,27 +168,27 @@ export function CreateEventTypeModal({
         />
 
         <Input
-          label="Slug (URL)"
-          placeholder="reunion-30-min"
+          label={t('eventTypes.modal.slug')}
+          placeholder={t('eventTypes.modal.slugPlaceholder')}
           error={errors.slug?.message}
           {...register('slug')}
         />
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Descripción (opcional)
+            {t('eventTypes.modal.descriptionLabel')}
           </label>
           <textarea
             className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             rows={2}
-            placeholder="Una breve descripción de la reunión"
+            placeholder={t('eventTypes.modal.descriptionPlaceholder')}
             {...register('description')}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Duración (minutos)
+            {t('eventTypes.modal.durationLabel')}
           </label>
           <div className="flex flex-wrap gap-2">
             {DURATIONS.map((d) => (
@@ -197,7 +214,7 @@ export function CreateEventTypeModal({
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Color
+            {t('eventTypes.modal.colorLabel')}
           </label>
           <div className="flex gap-2">
             {COLORS.map((color) => (
@@ -217,7 +234,7 @@ export function CreateEventTypeModal({
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Ubicación (opcional)
+            {t('eventTypes.modal.locationLabel')}
           </label>
           <div className="flex flex-wrap gap-2">
             {LOCATION_OPTIONS.map((opt) => (
@@ -240,7 +257,7 @@ export function CreateEventTypeModal({
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Precio (opcional)
+            {t('eventTypes.modal.priceLabel')}
           </label>
           <div className="flex items-center gap-2">
             <span className="text-gray-500">$</span>
@@ -248,14 +265,14 @@ export function CreateEventTypeModal({
               type="number"
               step="0.01"
               min="0"
-              placeholder="Gratuito"
+              placeholder={t('eventTypes.modal.pricePlaceholder')}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               {...register('price', { setValueAs: (v) => v === '' || v === null ? null : Number(v) })}
             />
             <span className="text-gray-500 text-sm">ARS</span>
           </div>
           <p className="mt-1 text-xs text-gray-500">
-            Dejar vacío para eventos gratuitos. Requiere MercadoPago conectado.
+            {t('eventTypes.modal.priceHelp')}
           </p>
         </div>
 
@@ -265,10 +282,10 @@ export function CreateEventTypeModal({
             variant="outline"
             onClick={onClose}
           >
-            Cancelar
+            {t('common.cancel')}
           </Button>
           <Button type="submit" className="flex-1" isLoading={isSubmitting}>
-            {editingEventType ? 'Guardar Cambios' : 'Crear Evento'}
+            {editingEventType ? t('eventTypes.modal.saveChanges') : t('eventTypes.modal.createEvent')}
           </Button>
         </div>
       </form>

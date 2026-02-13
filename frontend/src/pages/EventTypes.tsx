@@ -13,7 +13,7 @@ import toast from 'react-hot-toast';
 
 export function EventTypes() {
   const { user } = useAuth();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,7 +30,7 @@ export function EventTypes() {
       const res = await api.get('/event-types');
       setEventTypes(res.data);
     } catch (error) {
-      toast.error(language === 'es' ? 'Error al cargar los eventos' : 'Error loading events');
+      toast.error(t('eventTypes.loadError'));
     } finally {
       setIsLoading(false);
     }
@@ -55,10 +55,10 @@ export function EventTypes() {
     setIsDeleting(true);
     try {
       await api.delete(`/event-types/${deletingId}`);
-      toast.success(language === 'es' ? 'Evento eliminado' : 'Event deleted');
+      toast.success(t('eventTypes.deleted'));
       loadEventTypes();
     } catch (error) {
-      toast.error(language === 'es' ? 'Error al eliminar' : 'Error deleting');
+      toast.error(t('toast.deleteError'));
     } finally {
       setIsDeleting(false);
       setDeletingId(null);
@@ -70,7 +70,7 @@ export function EventTypes() {
       await api.patch(`/event-types/${id}`, { isActive });
       loadEventTypes();
     } catch (error) {
-      toast.error(language === 'es' ? 'Error al actualizar' : 'Error updating');
+      toast.error(t('eventTypes.updateError'));
     }
   };
 
@@ -80,7 +80,7 @@ export function EventTypes() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('nav.eventTypes')}</h1>
         <Button onClick={openCreateModal}>
           <Plus className="w-4 h-4 mr-2" />
-          {language === 'es' ? 'Nuevo Evento' : 'New Event'}
+          {t('eventTypes.new')}
         </Button>
       </div>
 
@@ -89,11 +89,11 @@ export function EventTypes() {
       ) : eventTypes.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-500 dark:text-gray-400 mb-4">
-            {language === 'es' ? 'No tienes tipos de eventos todavía' : "You don't have any event types yet"}
+            {t('eventTypes.noEvents')}
           </p>
           <Button onClick={openCreateModal}>
             <Plus className="w-4 h-4 mr-2" />
-            {language === 'es' ? 'Crear tu primer evento' : 'Create your first event'}
+            {t('eventTypes.createFirst')}
           </Button>
         </div>
       ) : (
@@ -122,12 +122,10 @@ export function EventTypes() {
         isOpen={!!deletingId}
         onClose={() => setDeletingId(null)}
         onConfirm={confirmDelete}
-        title={language === 'es' ? 'Eliminar tipo de evento' : 'Delete event type'}
-        message={language === 'es'
-          ? '¿Estás seguro de eliminar este tipo de evento? Esta acción no se puede deshacer.'
-          : 'Are you sure you want to delete this event type? This action cannot be undone.'}
-        confirmLabel={language === 'es' ? 'Eliminar' : 'Delete'}
-        cancelLabel={language === 'es' ? 'Cancelar' : 'Cancel'}
+        title={t('eventTypes.deleteTitle')}
+        message={t('eventTypes.confirmDeleteMessage')}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
         isLoading={isDeleting}
       />
     </div>

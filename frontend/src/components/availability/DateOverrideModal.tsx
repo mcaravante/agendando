@@ -6,7 +6,7 @@ import { TimeDropdown } from './TimeDropdown';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { DateOverride } from '../../types';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 
 const TIME_OPTIONS = Array.from({ length: 96 }, (_, i) => {
   const hours = Math.floor(i / 4);
@@ -38,7 +38,8 @@ export function DateOverrideModal({
   onSave,
   onDelete,
 }: DateOverrideModalProps) {
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
+  const dateFnsLocale = language === 'es' ? es : enUS;
   const [isBlocked, setIsBlocked] = useState(false);
   const [slots, setSlots] = useState<Slot[]>([{ startTime: '09:00', endTime: '17:00' }]);
 
@@ -62,8 +63,8 @@ export function DateOverrideModal({
   }, [existingOverrides, date]);
 
   const dateStr = format(date, 'yyyy-MM-dd');
-  const title = format(date, "d 'de' MMMM 'de' yyyy", {
-    locale: language === 'es' ? es : undefined,
+  const title = format(date, language === 'es' ? "d 'de' MMMM 'de' yyyy" : "MMMM d, yyyy", {
+    locale: dateFnsLocale,
   });
 
   const isValid = isBlocked || slots.every((s) => s.startTime < s.endTime);
@@ -101,7 +102,7 @@ export function DateOverrideModal({
       <div className="space-y-4">
         {weeklyHours && (
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {language === 'es' ? 'Horario semanal' : 'Weekly hours'}: {weeklyHours}
+            {t('availability.weeklyHoursHint')}: {weeklyHours}
           </p>
         )}
 
@@ -113,7 +114,7 @@ export function DateOverrideModal({
             className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
           />
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {language === 'es' ? 'Bloquear este dia' : 'Block this day'}
+            {t('availability.blockDay')}
           </span>
         </label>
 
@@ -139,7 +140,7 @@ export function DateOverrideModal({
                       type="button"
                       onClick={() => removeSlot(index)}
                       className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                      title={language === 'es' ? 'Eliminar' : 'Remove'}
+                      title={t('availability.removeSlot')}
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -150,7 +151,7 @@ export function DateOverrideModal({
                       type="button"
                       onClick={addSlot}
                       className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                      title={language === 'es' ? 'Agregar horario' : 'Add time'}
+                      title={t('availability.addSlot')}
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -163,9 +164,7 @@ export function DateOverrideModal({
 
         {!isBlocked && slots.some((s) => s.startTime >= s.endTime) && (
           <p className="text-sm text-red-500">
-            {language === 'es'
-              ? 'La hora de inicio debe ser anterior a la hora de fin'
-              : 'Start time must be before end time'}
+            {t('availability.timeValidation')}
           </p>
         )}
 
@@ -173,16 +172,16 @@ export function DateOverrideModal({
           <div>
             {existingOverrides.length > 0 && (
               <Button variant="danger" size="sm" onClick={handleDelete}>
-                {language === 'es' ? 'Eliminar' : 'Delete'}
+                {t('common.delete')}
               </Button>
             )}
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={onClose}>
-              {language === 'es' ? 'Cancelar' : 'Cancel'}
+              {t('common.cancel')}
             </Button>
             <Button size="sm" onClick={handleSave} disabled={!isValid}>
-              {language === 'es' ? 'Guardar' : 'Save'}
+              {t('common.save')}
             </Button>
           </div>
         </div>

@@ -3,7 +3,7 @@ import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Clock, MapPin, Calendar, Check, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 import { MonthCalendar } from '../components/calendar/MonthCalendar';
 import { TimeSlots } from '../components/calendar/TimeSlots';
 import { BookingForm } from '../components/booking/BookingForm';
@@ -29,7 +29,8 @@ export function BookingPage() {
   const { username, eventSlug } = useParams<{ username: string; eventSlug: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { timezone, setTimezone } = useTimezone();
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
+  const dateFnsLocale = language === 'es' ? es : enUS;
 
   // Check if embedded
   const isEmbed = searchParams.get('embed') === 'popup' || searchParams.get('embed') === 'inline';
@@ -125,11 +126,7 @@ export function BookingPage() {
   };
 
   const handleUnavailableClick = () => {
-    toast(language === 'es'
-      ? 'No hay disponibilidad para este día'
-      : 'No availability for this day',
-      { icon: '📅' }
-    );
+    toast(t('booking.noAvailabilityDay'), { icon: '📅' });
   };
 
   const loadEventData = async () => {
@@ -141,9 +138,9 @@ export function BookingPage() {
       // For now, all days are available and the slot API will filter
     } catch (error: any) {
       if (error.response?.status === 404) {
-        setError('Evento no encontrado');
+        setError(t('booking.notFound'));
       } else {
-        setError('Error al cargar el evento');
+        setError(t('booking.eventLoadError'));
       }
     } finally {
       setIsLoading(false);
@@ -161,7 +158,7 @@ export function BookingPage() {
       });
       setSlots(res.data);
     } catch (error) {
-      toast.error('Error al cargar horarios');
+      toast.error(t('booking.loadSlotsError'));
       setSlots([]);
     } finally {
       setIsSlotsLoading(false);
@@ -217,11 +214,11 @@ export function BookingPage() {
       }
     } catch (error: any) {
       if (error.response?.status === 409) {
-        toast.error('Este horario ya no está disponible. Por favor, elige otro.');
+        toast.error(t('booking.slotTaken'));
         navigateToStep('time', { date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '' }, { replace: true });
         loadSlots();
       } else {
-        toast.error(error.response?.data?.error || 'Error al crear la reserva');
+        toast.error(error.response?.data?.error || t('booking.createError'));
       }
     } finally {
       setIsSubmitting(false);
@@ -237,13 +234,13 @@ export function BookingPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            {error || 'Evento no encontrado'}
+            {error || t('booking.notFound')}
           </h1>
           <p className="text-gray-500 mb-4">
-            La página que buscas no existe o no está disponible.
+            {t('booking.notFoundMessage')}
           </p>
           <Link to={`/${username}`} className="text-primary-600 hover:underline">
-            Ver todos los eventos de {username}
+            {t('booking.viewAllEvents')} {username}
           </Link>
         </div>
       </div>
@@ -259,22 +256,22 @@ export function BookingPage() {
               <Check className="w-8 h-8 text-green-600" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              ¡Reserva Confirmada!
+              {t('booking.confirmed')}
             </h1>
             <p className="text-gray-600 mb-4">
-              Tu reunión con {data.user.name} ha sido programada.
+              {t('booking.confirmedMessage')}
             </p>
             <div className="bg-gray-50 rounded-lg p-4 text-left mb-6">
               <p className="font-semibold">{data.eventType.title}</p>
               <p className="text-sm text-gray-600">
-                {selectedSlot && formatInTimeZone(selectedSlot.datetime, timezone, "EEEE d 'de' MMMM, yyyy", { locale: es })}
+                {selectedSlot && formatInTimeZone(selectedSlot.datetime, timezone, language === 'es' ? "EEEE d 'de' MMMM, yyyy" : "EEEE, MMMM d, yyyy", { locale: dateFnsLocale })}
               </p>
               <p className="text-sm text-gray-600">
                 {selectedSlot && formatInTimeZone(selectedSlot.datetime, timezone, 'HH:mm')} ({timezone})
               </p>
             </div>
             <p className="text-sm text-gray-500">
-              Recibirás un email de confirmación con los detalles de la reunión.
+              {t('booking.confirmationEmail')}
             </p>
           </div>
         </div>
@@ -295,7 +292,7 @@ export function BookingPage() {
                   className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
                 >
                   <ArrowLeft className="w-4 h-4 mr-1" />
-                  Volver
+                  {t('common.back')}
                 </Link>
               )}
 
@@ -330,7 +327,7 @@ export function BookingPage() {
                 <div className="space-y-2 text-sm text-gray-600">
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4" />
-                    {data.eventType.duration} minutos
+                    {data.eventType.duration} {t('common.minutes')}
                   </div>
                   {data.eventType.price != null && Number(data.eventType.price) > 0 && (
                     <div className="flex items-center gap-2 font-semibold text-gray-900">
@@ -341,18 +338,18 @@ export function BookingPage() {
                   {data.eventType.location && (
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
-                      {{ meet: 'Google Meet', zoom: 'Zoom', phone: 'Teléfono', 'in-person': 'En persona' }[data.eventType.location] || data.eventType.location}
+                      {{ meet: t('location.meet'), zoom: t('location.zoom'), phone: t('location.phone'), 'in-person': t('location.inPerson') }[data.eventType.location] || data.eventType.location}
                     </div>
                   )}
                   {selectedSlot ? (
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
-                      {formatInTimeZone(selectedSlot.datetime, timezone, "EEEE d 'de' MMMM", { locale: es })}
+                      {formatInTimeZone(selectedSlot.datetime, timezone, language === 'es' ? "EEEE d 'de' MMMM" : "EEEE, MMMM d", { locale: dateFnsLocale })}
                     </div>
                   ) : selectedDate ? (
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
-                      {format(selectedDate, "EEEE d 'de' MMMM", { locale: es })}
+                      {format(selectedDate, language === 'es' ? "EEEE d 'de' MMMM" : "EEEE, MMMM d", { locale: dateFnsLocale })}
                     </div>
                   ) : null}
                   {selectedSlot && (
@@ -365,7 +362,7 @@ export function BookingPage() {
 
                 <div className="mt-4 pt-4 border-t">
                   <label className="block text-xs text-gray-500 mb-1">
-                    Tu zona horaria
+                    {t('booking.yourTimezone')}
                   </label>
                   <select
                     value={timezone}
@@ -386,7 +383,7 @@ export function BookingPage() {
             <div className="md:col-span-2">
               {step === 'date' && (
                 <div>
-                  <h2 className="text-lg font-semibold mb-4 text-gray-900">Selecciona una fecha</h2>
+                  <h2 className="text-lg font-semibold mb-4 text-gray-900">{t('booking.selectDate')}</h2>
                   <MonthCalendar
                     selectedDate={selectedDate}
                     onDateSelect={handleDateSelect}
@@ -401,9 +398,9 @@ export function BookingPage() {
               {step === 'time' && (
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold text-gray-900">Selecciona un horario</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">{t('booking.selectTime')}</h2>
                     <Button variant="ghost" size="sm" onClick={() => navigateToStep('date')}>
-                      Cambiar fecha
+                      {t('booking.changeDate')}
                     </Button>
                   </div>
                   <div className="bg-white rounded-xl border p-6">
@@ -430,7 +427,7 @@ export function BookingPage() {
 
               {step === 'form' && (
                 <div>
-                  <h2 className="text-lg font-semibold mb-4 text-gray-900">Completa tus datos</h2>
+                  <h2 className="text-lg font-semibold mb-4 text-gray-900">{t('booking.yourDetails')}</h2>
                   <div className="bg-white rounded-xl border p-6">
                     <BookingForm
                       onSubmit={handleFormSubmit}

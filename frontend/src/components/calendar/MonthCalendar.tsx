@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { addMonths, subMonths, format, isSameMonth, isToday, startOfDay, isBefore, addDays } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { getCalendarWeeks } from '../../utils/date';
 
 interface MonthCalendarProps {
@@ -25,6 +26,8 @@ export function MonthCalendar({
   onMonthChange,
   accentColor,
 }: MonthCalendarProps) {
+  const { t, language } = useLanguage();
+  const dateFnsLocale = language === 'es' ? es : enUS;
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const weeks = getCalendarWeeks(currentMonth);
@@ -83,7 +86,7 @@ export function MonthCalendar({
           <ChevronLeft className="w-5 h-5" />
         </button>
         <h3 className="text-lg font-semibold capitalize text-gray-900">
-          {format(currentMonth, 'MMMM yyyy', { locale: es })}
+          {format(currentMonth, 'MMMM yyyy', { locale: dateFnsLocale })}
         </h3>
         <button
           onClick={() => handleMonthChange(addMonths(currentMonth, 1))}
@@ -94,7 +97,7 @@ export function MonthCalendar({
       </div>
 
       <div className="grid grid-cols-7 gap-1">
-        {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day) => (
+        {[t('days.sunShort'), t('days.monShort'), t('days.tueShort'), t('days.wedShort'), t('days.thuShort'), t('days.friShort'), t('days.satShort')].map((day) => (
           <div
             key={day}
             className="text-center text-xs font-medium text-gray-500 py-2"

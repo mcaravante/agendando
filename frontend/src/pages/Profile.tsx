@@ -30,8 +30,8 @@ export function Profile() {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
   const profileSchema = z.object({
-    name: z.string().min(1, language === 'es' ? 'El nombre es requerido' : 'Name is required'),
-    timezone: z.string().min(1, language === 'es' ? 'La zona horaria es requerida' : 'Timezone is required'),
+    name: z.string().min(1, t('profile.nameRequired')),
+    timezone: z.string().min(1, t('profile.timezoneRequired')),
   });
 
   const {
@@ -64,12 +64,12 @@ export function Profile() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error(language === 'es' ? 'Solo se permiten imagenes' : 'Only images allowed');
+      toast.error(t('profile.imageOnly'));
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error(language === 'es' ? 'La imagen no puede superar 5MB' : 'Image must be under 5MB');
+      toast.error(t('profile.imageSizeLimit'));
       return;
     }
 
@@ -82,7 +82,7 @@ export function Profile() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       updateUser(res.data);
-      toast.success(language === 'es' ? 'Avatar actualizado' : 'Avatar updated');
+      toast.success(t('profile.avatarUpdated'));
     } catch (error: any) {
       toast.error(error.response?.data?.error || t('toast.saveError'));
     } finally {
@@ -92,7 +92,7 @@ export function Profile() {
 
   const handleLogout = () => {
     logout();
-    toast.success(language === 'es' ? 'Sesion cerrada' : 'Signed out');
+    toast.success(t('profile.signedOut'));
     navigate('/login');
   };
 
@@ -127,12 +127,12 @@ export function Profile() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error(language === 'es' ? 'Solo se permiten imagenes' : 'Only images allowed');
+      toast.error(t('profile.imageOnly'));
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error(language === 'es' ? 'La imagen no puede superar 5MB' : 'Image must be under 5MB');
+      toast.error(t('profile.imageSizeLimit'));
       return;
     }
 
@@ -351,14 +351,14 @@ export function Profile() {
       {/* Preferences Card */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          {language === 'es' ? 'Preferencias' : 'Preferences'}
+          {t('profile.preferences')}
         </h2>
 
         {/* Language Selection */}
         <div className="mb-6">
           <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
             <Globe className="w-4 h-4" />
-            {language === 'es' ? 'Idioma' : 'Language'}
+            {t('profile.language')}
           </label>
           <div className="flex gap-2">
             <button
@@ -392,7 +392,7 @@ export function Profile() {
         <div>
           <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
             {theme === 'light' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            {language === 'es' ? 'Tema' : 'Theme'}
+            {t('profile.theme')}
           </label>
           <div className="flex gap-2">
             <button

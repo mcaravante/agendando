@@ -88,18 +88,12 @@ export function Integrations() {
 
     if (success) {
       const providerName = success === 'google' ? 'Google Calendar' : success === 'mercadopago' ? 'MercadoPago' : 'Zoom';
-      toast.success(
-        language === 'es'
-          ? `${providerName} conectado exitosamente!`
-          : `${providerName} connected successfully!`
-      );
+      toast.success(`${providerName} ${t('integrations.connectedSuccess')}`);
       window.history.replaceState({}, '', '/integrations');
     }
 
     if (error) {
-      toast.error(
-        language === 'es' ? `Error al conectar: ${error}` : `Failed to connect: ${error}`
-      );
+      toast.error(`${t('integrations.connectError')}: ${error}`);
       window.history.replaceState({}, '', '/integrations');
     }
   }, [searchParams, language]);
@@ -109,7 +103,7 @@ export function Integrations() {
       const response = await api.get('/integrations');
       setIntegrations(response.data);
     } catch (error) {
-      toast.error(language === 'es' ? 'Error al cargar integraciones' : 'Failed to load integrations');
+      toast.error(t('integrations.loadError'));
     } finally {
       setLoading(false);
     }
@@ -118,12 +112,10 @@ export function Integrations() {
   const handleMpCallback = async (code: string) => {
     try {
       await api.post('/integrations/mercadopago/callback', { code });
-      toast.success(
-        language === 'es' ? 'MercadoPago conectado exitosamente!' : 'MercadoPago connected successfully!'
-      );
+      toast.success(`MercadoPago ${t('integrations.connectedSuccess')}`);
       fetchIntegrations();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || (language === 'es' ? 'Error al conectar MercadoPago' : 'Failed to connect MercadoPago'));
+      toast.error(error.response?.data?.error || t('integrations.connectError'));
     }
     window.history.replaceState({}, '', '/integrations');
   };
@@ -142,7 +134,7 @@ export function Integrations() {
       const response = await api.get(endpoint);
       window.location.href = response.data.url;
     } catch (error: any) {
-      toast.error(error.response?.data?.error || (language === 'es' ? 'Error al conectar' : 'Failed to connect'));
+      toast.error(error.response?.data?.error || t('integrations.connectError'));
       setConnecting(null);
     }
   };
@@ -161,10 +153,10 @@ export function Integrations() {
           ? '/integrations/mercadopago'
           : '/integrations/zoom';
       await api.delete(endpoint);
-      toast.success(language === 'es' ? 'Integración desconectada' : 'Integration disconnected');
+      toast.success(t('integrations.disconnectedSuccess'));
       fetchIntegrations();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || (language === 'es' ? 'Error al desconectar' : 'Failed to disconnect'));
+      toast.error(error.response?.data?.error || t('integrations.disconnectError'));
     } finally {
       setIsDisconnecting(false);
       setDisconnectingProvider(null);
@@ -184,9 +176,7 @@ export function Integrations() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('nav.integrations')}</h1>
         <p className="mt-1 text-gray-600 dark:text-gray-400">
-          {language === 'es'
-            ? 'Conecta tus aplicaciones favoritas para mejorar tu experiencia de programacion.'
-            : 'Connect your favorite apps to enhance your scheduling experience.'}
+          {t('integrations.subtitle')}
         </p>
       </div>
 
@@ -205,17 +195,17 @@ export function Integrations() {
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{info.name}</h3>
                 {integration.connected && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400">
-                    {language === 'es' ? 'Conectado' : 'Connected'}
+                    {t('integrations.connected')}
                   </span>
                 )}
               </div>
               <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                {language === 'es' ? info.descriptionEs : info.descriptionEn}
+                {language === 'es' ? info.descriptionEs : info.descriptionEn /* kept inline since integrationInfo is defined outside component */}
               </p>
 
               {integration.connected && integration.accountEmail && (
                 <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                  {language === 'es' ? 'Conectado como:' : 'Connected as:'} {integration.accountEmail}
+                  {t('integrations.connectedAs')} {integration.accountEmail}
                 </p>
               )}
 
@@ -225,7 +215,7 @@ export function Integrations() {
                     onClick={() => handleDisconnect(integration.provider)}
                     className="px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
                   >
-                    {language === 'es' ? 'Desconectar' : 'Disconnect'}
+                    {t('integrations.disconnect')}
                   </button>
                 ) : (
                   <button
@@ -234,8 +224,8 @@ export function Integrations() {
                     className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                   >
                         {connecting === integration.provider
-                          ? (language === 'es' ? 'Conectando...' : 'Connecting...')
-                          : (language === 'es' ? 'Conectar' : 'Connect')}
+                          ? t('integrations.connecting')
+                          : t('integrations.connect')}
                       </button>
                     )}
               </div>
@@ -247,7 +237,7 @@ export function Integrations() {
       {/* Info section */}
       <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
         <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
-          {language === 'es' ? 'Como funcionan las integraciones' : 'How integrations work'}
+          {t('integrations.howItWorks')}
         </h3>
         <ul className="mt-3 space-y-2 text-sm text-blue-800 dark:text-blue-200">
           <li className="flex items-start gap-2">
@@ -256,9 +246,7 @@ export function Integrations() {
             </svg>
             <span>
               <strong>Google Calendar:</strong>{' '}
-              {language === 'es'
-                ? 'Crea eventos de calendario automaticamente cuando alguien reserva contigo. Si estableces la ubicacion del tipo de evento como "Google Meet", se creara un enlace de reunion automaticamente.'
-                : 'Automatically creates calendar events when someone books with you. If you set an event type location to "Google Meet", a meeting link will be created automatically.'}
+              {t('integrations.googleInfo')}
             </span>
           </li>
           <li className="flex items-start gap-2">
@@ -267,9 +255,7 @@ export function Integrations() {
             </svg>
             <span>
               <strong>Zoom:</strong>{' '}
-              {language === 'es'
-                ? 'Crea reuniones de Zoom automaticamente cuando se hacen reservas para tipos de eventos con "Zoom" como ubicacion. El enlace de la reunion se incluye en los emails de confirmacion.'
-                : 'Creates Zoom meetings automatically when bookings are made for event types with "Zoom" as the location. The meeting link is included in confirmation emails.'}
+              {t('integrations.zoomInfo')}
             </span>
           </li>
           <li className="flex items-start gap-2">
@@ -278,9 +264,7 @@ export function Integrations() {
             </svg>
             <span>
               <strong>MercadoPago:</strong>{' '}
-              {language === 'es'
-                ? 'Cobra por tus eventos con MercadoPago. Configura un precio en tus tipos de eventos y los invitados pagan antes de confirmar la reserva. El turno se bloquea durante el pago y se libera si no se completa en 60 minutos.'
-                : 'Accept payments for your events with MercadoPago. Set a price on your event types and guests pay before confirming the booking. The slot is held during payment and released if not completed within 60 minutes.'}
+              {t('integrations.mpInfo')}
             </span>
           </li>
         </ul>
@@ -290,12 +274,10 @@ export function Integrations() {
         isOpen={!!disconnectingProvider}
         onClose={() => setDisconnectingProvider(null)}
         onConfirm={confirmDisconnect}
-        title={language === 'es' ? 'Desconectar integración' : 'Disconnect integration'}
-        message={language === 'es'
-          ? '¿Estás seguro de desconectar esta integración? Tus reservas futuras no se sincronizarán.'
-          : 'Are you sure you want to disconnect this integration? Your future bookings will not be synced.'}
-        confirmLabel={language === 'es' ? 'Desconectar' : 'Disconnect'}
-        cancelLabel={language === 'es' ? 'Cancelar' : 'Cancel'}
+        title={t('integrations.disconnectTitle')}
+        message={t('integrations.disconnectMessage')}
+        confirmLabel={t('integrations.disconnect')}
+        cancelLabel={t('common.cancel')}
         variant="warning"
         isLoading={isDisconnecting}
       />
