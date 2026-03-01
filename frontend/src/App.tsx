@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
@@ -28,6 +29,7 @@ import { Privacy } from './pages/Privacy';
 import { Terms } from './pages/Terms';
 import { Support } from './pages/Support';
 import { Documentation } from './pages/Documentation';
+import { Contact } from './pages/Contact';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -43,6 +45,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -52,10 +60,11 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/cancel/:token" element={<CancelBooking />} />
       <Route path="/booking/payment-result" element={<PaymentResult />} />
-      <Route path="/privacy" element={<Privacy />} />
-      <Route path="/terms" element={<Terms />} />
-      <Route path="/support" element={<Support />} />
-      <Route path="/docs" element={<Documentation />} />
+      <Route path="/privacidad" element={<Privacy />} />
+      <Route path="/condiciones" element={<Terms />} />
+      <Route path="/soporte" element={<Support />} />
+      <Route path="/documentacion" element={<Documentation />} />
+      <Route path="/contacto" element={<Contact />} />
 
       {/* Protected routes with DashboardLayout */}
       <Route
@@ -182,6 +191,7 @@ export default function App() {
       <ThemeProvider>
         <LanguageProvider>
           <AuthProvider>
+            <ScrollToTop />
             <AppRoutes />
             <Toaster
           position="top-right"
